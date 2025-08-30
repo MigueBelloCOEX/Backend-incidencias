@@ -54,37 +54,71 @@ def release_db_connection(conn):
 
 def download_kml_files_from_github():
     """
-    Descarga los archivos KML desde GitHub
+    Descarga los archivos KML desde GitHub con autenticación
     """
     try:
-        # URL del repositorio de GitHub donde están los archivos KML
-        github_repo_url = "https://api.github.com/repos/MigueBelloCOEX/Backend-incidencias/contents/P.K"
+        # Token de acceso personal de GitHub
+        github_token = os.environ.get('GITHUB_TOKEN')
+        
+        if not github_token:
+            print("⚠️  GITHUB_TOKEN no configurado en variables de entorno")
+            return False
+        
+        # URL del repositorio
+        owner = "MigueBelloCOEX"
+        repo = "Backend-incidencias"
+        path = "P.K"
+        github_api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
+        
+        # Headers con autenticación
+        headers = {
+            'Authorization': f'token {github_token}',
+            'Accept': 'application/vnd.github.v3+json'
+        }
+        
+        print("🔑 Conectando a GitHub API con token de autenticación...")
         
         # Hacer solicitud a la API de GitHub
-        response = requests.get(github_repo_url)
+        response = requests.get(github_api_url, headers=headers)
+        
+        if response.status_code == 403:
+            print("❌ Error 403: Límite de tasa excedido o token inválido")
+            print(f"📋 Respuesta de GitHub: {response.text}")
+            return False
+        
         response.raise_for_status()
         
         files = response.json()
         
         # Descargar cada archivo KML
+        downloaded_count = 0
         for file_info in files:
             if file_info['name'].endswith('.kml'):
-                file_url = file_info['download_url']
-                file_response = requests.get(file_url)
+                file_name = file_info['name']
+                download_url = file_info['download_url']
+                
+                print(f"📥 Descargando: {file_name}")
+                
+                # Descargar el archivo
+                file_response = requests.get(download_url, headers=headers)
                 file_response.raise_for_status()
                 
                 # Guardar el archivo en la carpeta P.K
-                file_path = os.path.join('P.K', file_info['name'])
+                file_path = os.path.join('P.K', file_name)
                 with open(file_path, 'wb') as f:
                     f.write(file_response.content)
                 
-                print(f"Descargado: {file_info['name']}")
+                print(f"✅ Descargado: {file_name}")
+                downloaded_count += 1
         
-        print("Todos los archivos KML han sido descargados exitosamente")
+        print(f"🎉 {downloaded_count} archivos KML descargados exitosamente")
         return True
         
+    except requests.HTTPError as e:
+        print(f"❌ Error HTTP {e.response.status_code}: {e.response.text}")
+        return False
     except Exception as e:
-        print(f"Error descargando archivos KML desde GitHub: {e}")
+        print(f"❌ Error descargando archivos KML desde GitHub: {str(e)}")
         return False
 
 def setup_database():
@@ -93,9 +127,27 @@ def setup_database():
     """
     conn = None
     try:
-        # Primero descargar los archivos KML desde GitHub
-        if not download_kml_files_from_github():
-            print("Advertencia: No se pudieron descargar los archivos KML desde GitHub")
+        # Primero intentar descargar los archivos KML desde GitHub
+        print("🔄 Intentando descargar archivos KML desde GitHub...")
+        
+        kml_downloaded = download_kml_files_from_github()
+        
+        if not kml_downloaded:
+            print("⚠️  No se pudieron descargar los archivos KML desde GitHub")
+            print("🔍 Verificando si existen archivos KML locales en la carpeta P.K...")
+            
+            # Verificar si ya existen archivos KML en la carpeta P.K
+            if os.path.exists('P.K'):
+                kml_files = [f for f in os.listdir('P.K') if f.endswith('.kml')]
+                if kml_files:
+                    print(f"✅ Se encontraron {len(kml_files)} archivos KML locales")
+                else:
+                    print("❌ No hay archivos KML disponibles en la carpeta P.K")
+                    print("💡 La aplicación funcionará pero necesitará archivos KML para interpolar coordenadas")
+            else:
+                print("❌ La carpeta P.K no existe")
+                os.makedirs('P.K', exist_ok=True)
+                print("📁 Carpeta P.K creada")
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -139,22 +191,26 @@ def setup_database():
         conn.commit()
         cursor.close()
         
-        # Cargar datos desde los archivos KML
-        kml_dir = 'P.K'
-        for file_name in os.listdir(kml_dir):
-            if file_name.endswith('.kml'):
-                kml_path = os.path.join(kml_dir, file_name)
-                load_kml_data_into_db(kml_path)
+        # Cargar datos desde los archivos KML si existen
+        if os.path.exists('P.K'):
+            kml_files = [f for f in os.listdir('P.K') if f.endswith('.kml')]
+            if kml_files:
+                print(f"📊 Cargando datos desde {len(kml_files)} archivos KML...")
+                for file_name in kml_files:
+                    kml_path = os.path.join('P.K', file_name)
+                    load_kml_data_into_db(kml_path)
+            else:
+                print("ℹ️  No hay archivos KML para cargar en la base de datos")
         
-        print("Database setup completed successfully")
+        print("✅ Configuración de base de datos completada exitosamente")
         
     except Exception as e:
-        print(f"Error setting up database: {e}")
-        raise
+        print(f"❌ Error en setup_database: {e}")
+        # No hacemos raise para que la aplicación pueda iniciar
+        # incluso si hay problemas con la configuración inicial
     finally:
         if conn:
             release_db_connection(conn)
-
 def load_kml_data_into_db(kml_path):
     """
     Carga los puntos kilométricos desde un archivo KML a la base de datos.
@@ -483,3 +539,4 @@ except Exception as e:
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
+
