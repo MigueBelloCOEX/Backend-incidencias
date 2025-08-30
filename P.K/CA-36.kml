@@ -1,0 +1,693 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="CA_36" id="CA_36">
+	<SimpleField name="fid" type="float"></SimpleField>
+	<SimpleField name="timestamp" type="string"></SimpleField>
+	<SimpleField name="begin" type="string"></SimpleField>
+	<SimpleField name="end" type="string"></SimpleField>
+	<SimpleField name="altitudeMode" type="string"></SimpleField>
+	<SimpleField name="tessellate" type="int"></SimpleField>
+	<SimpleField name="extrude" type="int"></SimpleField>
+	<SimpleField name="visibility" type="int"></SimpleField>
+	<SimpleField name="drawOrder" type="int"></SimpleField>
+	<SimpleField name="icon" type="string"></SimpleField>
+	<SimpleField name="Link_aFicha" type="string"></SimpleField>
+	<SimpleField name="Sector" type="string"></SimpleField>
+	<SimpleField name="C__digo" type="string"></SimpleField>
+	<SimpleField name="Id" type="string"></SimpleField>
+	<SimpleField name="Carretera" type="string"></SimpleField>
+	<SimpleField name="Pk_Inicial" type="string"></SimpleField>
+	<SimpleField name="Pk_Final" type="string"></SimpleField>
+	<SimpleField name="Caracterizaci__n_general" type="string"></SimpleField>
+	<SimpleField name="Caracterizaci__n_particular" type="string"></SimpleField>
+	<SimpleField name="N__mero_de_caracterizaci__n_general" type="string"></SimpleField>
+	<SimpleField name="N__mero_de_caracterizaci__n_particular" type="string"></SimpleField>
+	<SimpleField name="Id_ramal" type="string"></SimpleField>
+	<SimpleField name="Pk_Inicial_v__a_complementaria" type="string"></SimpleField>
+	<SimpleField name="Pk_Final_v__a_complementaria" type="string"></SimpleField>
+	<SimpleField name="Distancia_inicial_a_origen__m_" type="string"></SimpleField>
+	<SimpleField name="Distancia_final_a_origen__m_" type="string"></SimpleField>
+	<SimpleField name="Zona" type="string"></SimpleField>
+	<SimpleField name="__mbito" type="string"></SimpleField>
+	<SimpleField name="Margen" type="string"></SimpleField>
+	<SimpleField name="V__a_afectada" type="string"></SimpleField>
+	<SimpleField name="TRANSVERSAL_ORIENTACION" type="string"></SimpleField>
+	<SimpleField name="Posici__n_respecto_al_poste" type="string"></SimpleField>
+	<SimpleField name="Id_del_t__nel" type="string"></SimpleField>
+	<SimpleField name="C__digo_Placa_" type="string"></SimpleField>
+	<SimpleField name="Carretera_Hito" type="string"></SimpleField>
+	<SimpleField name="Indicaci__n" type="string"></SimpleField>
+	<SimpleField name="Leyenda_Placa_" type="string"></SimpleField>
+	<SimpleField name="Geometr__a" type="string"></SimpleField>
+	<SimpleField name="Dimensiones_deslpegable" type="string"></SimpleField>
+	<SimpleField name="Dimensiones_mm" type="string"></SimpleField>
+	<SimpleField name="Dimensiones_lado_largo_mm" type="string"></SimpleField>
+	<SimpleField name="Nivel_de_reflectancia" type="string"></SimpleField>
+	<SimpleField name="Fluorescencia" type="string"></SimpleField>
+	<SimpleField name="Material_de_la_placa" type="string"></SimpleField>
+	<SimpleField name="Fabricante" type="string"></SimpleField>
+	<SimpleField name="Fecha_de_fabricaci__n" type="string"></SimpleField>
+	<SimpleField name="Posici__n_relativa" type="string"></SimpleField>
+	<SimpleField name="Placa_solar" type="string"></SimpleField>
+	<SimpleField name="Iluminaci__n" type="string"></SimpleField>
+	<SimpleField name="Id_de_la_sustentaci__n" type="string"></SimpleField>
+	<SimpleField name="Ultima_Actualizaci__n" type="string"></SimpleField>
+	<SimpleField name="Observaciones_de_caracter__sticas" type="string"></SimpleField>
+	<SimpleField name="Fecha_de_inspecci__n" type="string"></SimpleField>
+	<SimpleField name="Nombre_del_inspector" type="string"></SimpleField>
+	<SimpleField name="Observaciones_de_inspecci__n" type="string"></SimpleField>
+	<SimpleField name="Estado_de_la_limpieza_de_la_se__al" type="string"></SimpleField>
+	<SimpleField name="Estado_del_material_constitutivo_de_la_placa_y_sus_postes" type="string"></SimpleField>
+	<SimpleField name="Deformaciones_de_la_placa_y_sus_postes" type="string"></SimpleField>
+	<SimpleField name="ESTADO_DE_LAS_ZONAS_RETRORREFLECTANTES" type="string"></SimpleField>
+	<SimpleField name="Estado_de_las_zonas_retrorreflectantes__secundario" type="string"></SimpleField>
+	<SimpleField name="INDICE_DE_ESTADO" type="string"></SimpleField>
+</Schema>
+<Folder><name>CA_36</name>
+  <Placemark>
+	<name>0 + 000 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">1</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.22403780000596,36.5223389777392,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 100 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">2</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.22498803961234,36.5218646698367,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 200 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">3</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.22580353735268,36.5212566989087,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 300 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">4</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.22637266747166,36.5204864150808,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 400 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">5</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.22723244821996,36.5199119244451,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 500 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">6</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.22830824376746,36.5196783069556,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 600 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">7</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.22932424457316,36.5193224811939,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 700 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">8</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23012124686033,36.518685905508,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 800 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">9</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23084231569597,36.5179921021449,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>0 + 900 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">10</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23156377262851,36.5173040981558,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 000 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">11</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23214389350338,36.5165296498822,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 100 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">12</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23260439717642,36.5156853861743,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 200 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">13</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23303898048534,36.5148497453484,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 300 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">14</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23347048725926,36.5140124859378,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 400 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">15</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23391980913855,36.513184394405,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 500 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">16</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.2344722598868,36.5124201887624,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 600 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">17</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23519365420972,36.5117205889826,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 700 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">18</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23604972625115,36.5111388169529,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 800 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">19</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23703548332007,36.5107168770592,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>1 + 900 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">20</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23814300908107,36.5104050219011,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 000 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">21</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.23920472554717,36.5101285225114,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 100 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">22</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.2402811529173,36.5098611613132,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 200 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">23</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24134626454537,36.50960645131,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 300 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">24</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24242003850664,36.5093564813571,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 400 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">25</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24348041353747,36.5090757480185,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 500 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">26</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24449813771953,36.508660741476,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2+ 600 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">27</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24536854877781,36.5081189453411,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 700 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">28</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24615941560008,36.5074814185253,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 800 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">29</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24692479470318,36.5068328156379,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>2 + 900 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">30</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24774496009281,36.5062080797326,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 000 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">31</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+		<SimpleData name="Link_aFicha">&lt;a href=&quot;http://terexserver.net/web/Home/Fichas_desde_PC/N9odlZAqWKBnFyRGterexterexHof3A6rp2V1jbartekmpX2cF1W5txc82Ul4ont4o0ZW2Jzn2F8uelsKufwh7XxLOterexTEM27i&quot;&gt;TEREX_web&lt;/a&gt;</SimpleData>
+		<SimpleData name="Sector">CA-3</SimpleData>
+		<SimpleData name="C__digo">SÑAL</SimpleData>
+		<SimpleData name="Id">980394</SimpleData>
+		<SimpleData name="Carretera">CA-36</SimpleData>
+		<SimpleData name="Pk_Inicial">3+ 0+     0</SimpleData>
+		<SimpleData name="Pk_Final">3+ 0+     0</SimpleData>
+		<SimpleData name="Caracterizaci__n_general">Tronco</SimpleData>
+		<SimpleData name="Caracterizaci__n_particular">Tronco</SimpleData>
+		<SimpleData name="Pk_Inicial_v__a_complementaria">+ +</SimpleData>
+		<SimpleData name="Pk_Final_v__a_complementaria">+ +</SimpleData>
+		<SimpleData name="Zona">Pk creciente</SimpleData>
+		<SimpleData name="__mbito">Puntual</SimpleData>
+		<SimpleData name="Margen">Derecho</SimpleData>
+		<SimpleData name="TRANSVERSAL_ORIENTACION">Ascendente</SimpleData>
+		<SimpleData name="Posici__n_respecto_al_poste">Frontal, izquierda o derecha</SimpleData>
+		<SimpleData name="C__digo_Placa_">S-570</SimpleData>
+		<SimpleData name="Carretera_Hito">CA-36</SimpleData>
+		<SimpleData name="Leyenda_Placa_">Km 3</SimpleData>
+		<SimpleData name="Geometr__a">Cuadrada</SimpleData>
+		<SimpleData name="Dimensiones_deslpegable">Pequeña</SimpleData>
+		<SimpleData name="Dimensiones_mm">600</SimpleData>
+		<SimpleData name="Dimensiones_lado_largo_mm">600</SimpleData>
+		<SimpleData name="Nivel_de_reflectancia">RA2</SimpleData>
+		<SimpleData name="Fluorescencia">No</SimpleData>
+		<SimpleData name="Material_de_la_placa">Acero galvanizado</SimpleData>
+		<SimpleData name="Fabricante">API Movilidad</SimpleData>
+		<SimpleData name="Fecha_de_fabricaci__n">01/12/2015 0:00:00</SimpleData>
+		<SimpleData name="Posici__n_relativa">3</SimpleData>
+		<SimpleData name="Iluminaci__n">Ninguna</SimpleData>
+		<SimpleData name="Id_de_la_sustentaci__n">705538</SimpleData>
+		<SimpleData name="Ultima_Actualizaci__n">29/03/2019 11:18:55</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24851912048149,36.5055402130174,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 100 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">32</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.24929034047872,36.5048824518538,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 200 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">33</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25006220767559,36.504224516799,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 300 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">34</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25082842308871,36.5035714285435,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 400 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">35</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25159715344447,36.5029108313966,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 500 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">36</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25236418040173,36.5022586715132,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 600 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">37</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25315787634863,36.501578201425,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 700 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">38</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25399807697987,36.5009766451164,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 800 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">39</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25493045392877,36.5004901894381,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>3 + 900 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">40</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25593565987969,36.5000748710034,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 000 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">41</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+		<SimpleData name="Link_aFicha">&lt;a href=&quot;http://terexserver.net/web/Home/Fichas_desde_PC/NbTPHFJiPvzWQF37PRfCqixfa2bartekZSeCjgxz94dTBVtT0IQspvP7xv0s6xnpfJfyjKd1dHGsbartekdW0acEza0dLC&quot;&gt;TEREX_web&lt;/a&gt;</SimpleData>
+		<SimpleData name="Sector">CA-3</SimpleData>
+		<SimpleData name="C__digo">SÑAL</SimpleData>
+		<SimpleData name="Id">980396</SimpleData>
+		<SimpleData name="Carretera">CA-36</SimpleData>
+		<SimpleData name="Pk_Inicial">4+ 0+     0</SimpleData>
+		<SimpleData name="Pk_Final">4+ 0+     0</SimpleData>
+		<SimpleData name="Caracterizaci__n_general">Tronco</SimpleData>
+		<SimpleData name="Caracterizaci__n_particular">Tronco</SimpleData>
+		<SimpleData name="Pk_Inicial_v__a_complementaria">+ +</SimpleData>
+		<SimpleData name="Pk_Final_v__a_complementaria">+ +</SimpleData>
+		<SimpleData name="Zona">Pk creciente</SimpleData>
+		<SimpleData name="__mbito">Puntual</SimpleData>
+		<SimpleData name="Margen">Derecho</SimpleData>
+		<SimpleData name="TRANSVERSAL_ORIENTACION">Ascendente</SimpleData>
+		<SimpleData name="Posici__n_respecto_al_poste">Frontal, izquierda o derecha</SimpleData>
+		<SimpleData name="C__digo_Placa_">S-570</SimpleData>
+		<SimpleData name="Carretera_Hito">CA-36</SimpleData>
+		<SimpleData name="Leyenda_Placa_">Km 4</SimpleData>
+		<SimpleData name="Geometr__a">Cuadrada</SimpleData>
+		<SimpleData name="Dimensiones_deslpegable">Pequeña</SimpleData>
+		<SimpleData name="Dimensiones_mm">600</SimpleData>
+		<SimpleData name="Dimensiones_lado_largo_mm">600</SimpleData>
+		<SimpleData name="Nivel_de_reflectancia">RA2</SimpleData>
+		<SimpleData name="Fluorescencia">No</SimpleData>
+		<SimpleData name="Material_de_la_placa">Acero galvanizado</SimpleData>
+		<SimpleData name="Fabricante">API Movilidad</SimpleData>
+		<SimpleData name="Fecha_de_fabricaci__n">01/11/2015 0:00:00</SimpleData>
+		<SimpleData name="Posici__n_relativa">1</SimpleData>
+		<SimpleData name="Iluminaci__n">Ninguna</SimpleData>
+		<SimpleData name="Id_de_la_sustentaci__n">793011</SimpleData>
+		<SimpleData name="Ultima_Actualizaci__n">02/04/2019 9:26:29</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.2569154523473,36.4996374397656,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 100 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">42</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25785906368842,36.4991164159647,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 200 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">43</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25878906598278,36.498609535968,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 300 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">44</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.25972301106363,36.4980889887948,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 400 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">45</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.26063895560998,36.4975790682142,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 500 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">46</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.2615576606248,36.4970636126033,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 600 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">47</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.2624040160886,36.4964419079914,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 700 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">48</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.26331847181148,36.4959204521645,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 800 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">49</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.26427428061206,36.4954434711671,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>4 + 900 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">50</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.26530634853845,36.4951085558933,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>5 + 000 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">51</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.2664007189799,36.4949608902833,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>5 + 100 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">52</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.26754947029129,36.4949677155301,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>5 + 200 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">53</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.26862769838235,36.4951650873132,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>5 + 300 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">54</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.2696764869277,36.4954611786515,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>5 + 400 CRE</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">55</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.27071463427038,36.4958108860169,0</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<name>5 + 470</name>
+	<ExtendedData><SchemaData schemaUrl="#CA_36">
+		<SimpleData name="fid">56</SimpleData>
+		<SimpleData name="tessellate">-1</SimpleData>
+		<SimpleData name="extrude">0</SimpleData>
+		<SimpleData name="visibility">-1</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-6.27112778283936,36.4963416125962,0</coordinates></Point>
+  </Placemark>
+</Folder>
+</Document></kml>
