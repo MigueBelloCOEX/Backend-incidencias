@@ -36,6 +36,14 @@
         .table-hover tbody tr:hover {
             background-color: #f1f1f1;
         }
+        .debug-info {
+            font-size: 0.8em;
+            color: #666;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -62,6 +70,7 @@
                             <div class="mb-3">
                                 <label class="form-label">📍 Punto Kilométrico</label>
                                 <input type="text" class="form-control" id="kilometro" required placeholder="Ej: 0+100 o 1.5">
+                                <div class="form-text">Formato: X+XXX (0+100) o decimal (1.5)</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -113,6 +122,13 @@
 
                 <div id="error" class="alert alert-danger mt-4" style="display: none;">
                     <span id="errorMessage"></span>
+                </div>
+
+                <div class="mt-3">
+                    <button class="btn btn-info btn-sm" onclick="verPuntosCarretera()">
+                        🔍 Ver puntos de carretera disponibles
+                    </button>
+                    <div id="puntosInfo" class="debug-info" style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -187,7 +203,7 @@
 
                 document.getElementById('loading').style.display = 'none';
 
-                if (response.ok) { // Using response.ok for better error handling
+                if (response.ok) {
                     document.getElementById('kmlUrlLink').href = result.kml_url;
                     document.getElementById('kmlUrlLink').textContent = result.kml_url;
                     
@@ -261,6 +277,35 @@
                 document.getElementById('loadingIncidencias').style.display = 'none';
                 document.getElementById('noIncidencias').style.display = 'block';
                 document.getElementById('noIncidencias').innerHTML = `<p class="text-danger">Error cargando incidencias: ${error.message}</p>`;
+            }
+        }
+
+        async function verPuntosCarretera() {
+            try {
+                const carretera = document.getElementById('carretera').value.trim();
+                let url = 'https://backend-incidencia.onrender.com/api/puntos_carretera';
+                
+                if (carretera) {
+                    url += `?carretera=${encodeURIComponent(carretera)}`;
+                }
+
+                const response = await fetch(url);
+                const puntos = await response.json();
+
+                const puntosInfo = document.getElementById('puntosInfo');
+                if (puntos.length > 0) {
+                    let html = `<strong>Puntos disponibles${carretera ? ' para ' + carretera : ''}:</strong><br>`;
+                    puntos.forEach(punto => {
+                        html += `${punto.carretera} ${punto.kilometro_texto} (${punto.latitud.toFixed(6)}, ${punto.longitud.toFixed(6)})<br>`;
+                    });
+                    puntosInfo.innerHTML = html;
+                    puntosInfo.style.display = 'block';
+                } else {
+                    puntosInfo.innerHTML = 'No se encontraron puntos de carretera en la base de datos.';
+                    puntosInfo.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error cargando puntos de carretera:', error);
             }
         }
     </script>
