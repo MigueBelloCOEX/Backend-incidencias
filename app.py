@@ -54,7 +54,7 @@ def release_db_connection(conn):
 
 def download_kml_files_from_github():
     """
-    Descarga los archivos KML desde GitHub con autenticación
+    Descarga los archivos KML desde GitHub con autenticación - Versión corregida
     """
     try:
         # Token de acceso personal de GitHub
@@ -64,11 +64,10 @@ def download_kml_files_from_github():
             print("⚠️  GITHUB_TOKEN no configurado en variables de entorno")
             return False
         
-        # URL del repositorio
+        # URL del repositorio - CORREGIDA
         owner = "MigueBelloCOEX"
         repo = "Backend-incidencias"
-        path = "P.K"
-        github_api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
+        github_api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
         
         # Headers con autenticación
         headers = {
@@ -78,22 +77,44 @@ def download_kml_files_from_github():
         
         print("🔑 Conectando a GitHub API con token de autenticación...")
         
-        # Hacer solicitud a la API de GitHub
+        # Primero listar el contenido del repositorio para encontrar la carpeta
         response = requests.get(github_api_url, headers=headers)
         
         if response.status_code == 403:
             print("❌ Error 403: Límite de tasa excedido o token inválido")
             print(f"📋 Respuesta de GitHub: {response.text}")
             return False
+        elif response.status_code == 404:
+            print("❌ Error 404: Repositorio no encontrado o URL incorrecta")
+            print("💡 Verifica que el repositorio exista y sea público, o que el token tenga acceso")
+            return False
         
         response.raise_for_status()
         
-        files = response.json()
+        # Buscar la carpeta P.K en el repositorio
+        contents = response.json()
+        pk_folder = None
+        
+        for item in contents:
+            if item['type'] == 'dir' and item['name'].lower() in ['p.k', 'pk', 'p_k']:
+                pk_folder = item
+                break
+        
+        if not pk_folder:
+            print("❌ No se encontró la carpeta P.K en el repositorio")
+            return False
+        
+        # Obtener contenido de la carpeta P.K
+        pk_url = pk_folder['url']
+        pk_response = requests.get(pk_url, headers=headers)
+        pk_response.raise_for_status()
+        
+        pk_contents = pk_response.json()
         
         # Descargar cada archivo KML
         downloaded_count = 0
-        for file_info in files:
-            if file_info['name'].endswith('.kml'):
+        for file_info in pk_contents:
+            if file_info['name'].endswith('.kml') and file_info['type'] == 'file':
                 file_name = file_info['name']
                 download_url = file_info['download_url']
                 
@@ -539,4 +560,5 @@ except Exception as e:
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
