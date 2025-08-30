@@ -23,14 +23,17 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs('static/fotos', exist_ok=True)
 os.makedirs('P.K', exist_ok=True)
 
-def setup_database(conn):
+# Conexión persistente a la base de datos para toda la aplicación
+# Esto evita que se agoten los slots de conexión
+db_conn = psycopg2.connect(DATABASE_URL)
+db_cursor = db_conn.cursor()
+
+def setup_database():
     """
     Crea las tablas de la base de datos si no existen y carga los datos iniciales.
     """
-    cursor = conn.cursor()
-    
-    # Crear tablas si no existen
-    cursor.execute('''
+    # Usamos la conexión persistente en lugar de crear una nueva
+    db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS puntos_carretera (
             id SERIAL PRIMARY KEY,
             carretera TEXT,
@@ -42,7 +45,7 @@ def setup_database(conn):
         );
     ''')
     
-    cursor.execute('''
+    db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS incidencias (
             id TEXT PRIMARY KEY,
             carretera TEXT,
@@ -56,7 +59,7 @@ def setup_database(conn):
         );
     ''')
     
-    cursor.execute('''
+    db_cursor.execute('''
         CREATE TABLE IF NOT EXISTS fotos_incidencia (
             id SERIAL PRIMARY KEY,
             incidencia_id TEXT,
@@ -65,8 +68,7 @@ def setup_database(conn):
         );
     ''')
     
-    conn.commit()
-    cursor.close()
+    db_conn.commit()
     
     # Cargar datos desde los archivos KML
     kml_dir = 'P.K'
@@ -75,20 +77,10 @@ def setup_database(conn):
             kml_path = os.path.join(kml_dir, file_name)
             load_kml_data_into_db(kml_path)
 
-def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    # Ejecutar la configuración de la base de datos inmediatamente
-    # después de establecer la conexión para garantizar que las tablas existan.
-    setup_database(conn)
-    return conn
-
 def load_kml_data_into_db(kml_path):
     """
     Carga los puntos kilométricos desde un archivo KML a la base de datos.
     """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
     try:
         tree = ET.parse(kml_path)
         root = tree.getroot()
@@ -120,17 +112,15 @@ def load_kml_data_into_db(kml_path):
                         kilometro = km_entero * 1000 + km_metros
                         
                         # Usamos INSERT ON CONFLICT para evitar duplicados si el script se ejecuta más de una vez
-                        cursor.execute('''
+                        db_cursor.execute('''
                             INSERT INTO puntos_carretera (carretera, kilometro, kilometro_texto, latitud, longitud)
                             VALUES (%s, %s, %s, %s, %s)
                             ON CONFLICT (kilometro_texto, carretera) DO NOTHING;
                         ''', (carretera, kilometro, kilometro_texto, latitud, longitud))
                         
-        conn.commit()
+        db_conn.commit()
     except Exception as e:
         print(f"Error al cargar datos del KML {kml_path}: {e}")
-    finally:
-        conn.close()
 
 def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
     try:
@@ -146,29 +136,24 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
                 metros_totales = kilometro_decimal * 1000
             except ValueError:
                 return None, None
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
         
         # Buscar puntos de referencia
-        cursor.execute('''
+        db_cursor.execute('''
             SELECT kilometro, latitud, longitud 
             FROM puntos_carretera 
             WHERE carretera = %s AND kilometro <= %s
             ORDER BY kilometro DESC LIMIT 1
         ''', (carretera.upper(), metros_totales))
-        punto_inicial = cursor.fetchone()
+        punto_inicial = db_cursor.fetchone()
         
-        cursor.execute('''
+        db_cursor.execute('''
             SELECT kilometro, latitud, longitud 
             FROM puntos_carretera 
             WHERE carretera = %s AND kilometro >= %s
             ORDER BY kilometro ASC LIMIT 1
         ''', (carretera.upper(), metros_totales))
-        punto_final = cursor.fetchone()
+        punto_final = db_cursor.fetchone()
         
-        conn.close()
-
         if punto_inicial and punto_final:
             km1, lat1, lon1 = punto_inicial[0], punto_inicial[1], punto_inicial[2]
             km2, lat2, lon2 = punto_final[0], punto_final[1], punto_final[2]
@@ -260,10 +245,7 @@ def index():
 @app.route('/api/incidencias', methods=['GET'])
 def get_incidencias():
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
+        db_cursor.execute('''
             SELECT i.*, COUNT(f.id) as num_fotos 
             FROM incidencias i 
             LEFT JOIN fotos_incidencia f ON i.id = f.incidencia_id 
@@ -272,7 +254,7 @@ def get_incidencias():
         ''')
         
         incidencias = []
-        for row in cursor.fetchall():
+        for row in db_cursor.fetchall():
             incidencia = {
                 "id": row[0], "carretera": row[1], "kilometro": row[2], 
                 "latitud": row[3], "longitud": row[4], "tipo": row[5], 
@@ -287,7 +269,6 @@ def get_incidencias():
                 incidencia['google_maps_url'] = f"https://www.google.com/maps?q={incidencia['latitud']},{incidencia['longitud']}"
             incidencias.append(incidencia)
         
-        conn.close()
         return jsonify(incidencias)
         
     except Exception as e:
@@ -320,22 +301,16 @@ def crear_incidencia():
             return jsonify({'error': 'Error creando archivo KML'}), 500
         
         # Guardar en base de datos
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
         try:
-            cursor.execute('''
+            db_cursor.execute('''
                 INSERT INTO incidencias (id, carretera, kilometro, latitud, longitud, tipo, fecha, descripcion, kml_file)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (incidencia_id, carretera.upper(), kilometro, latitud, longitud, tipo, 
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'), descripcion, kml_filename))
             
-            conn.commit()
+            db_conn.commit()
         except psycopg2.IntegrityError:
-            conn.close()
             return jsonify({'error': 'El ID de incidencia ya existe'}), 400
-        finally:
-            conn.close()
         
         # Generar URLs públicas
         base_url = request.host_url.rstrip('/')
@@ -374,5 +349,6 @@ def health_check():
     return jsonify({'status': 'healthy'})
 
 if __name__ == '__main__':
+    setup_database()
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
