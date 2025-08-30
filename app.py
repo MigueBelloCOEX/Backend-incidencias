@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
 import psycopg2
+from psycopg2 import pool
 import os
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
@@ -23,73 +24,104 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs('static/fotos', exist_ok=True)
 os.makedirs('P.K', exist_ok=True)
 
-def setup_database(conn):
+# Pool de conexiones
+connection_pool = None
+
+def init_connection_pool():
+    global connection_pool
+    try:
+        connection_pool = pool.SimpleConnectionPool(
+            1,  # min connections
+            5,  # max connections (ajusta según tu plan de Render)
+            DATABASE_URL
+        )
+        print("Connection pool created successfully")
+    except Exception as e:
+        print(f"Error creating connection pool: {e}")
+        raise
+
+def get_db_connection():
+    if connection_pool is None:
+        init_connection_pool()
+    return connection_pool.getconn()
+
+def release_db_connection(conn):
+    if connection_pool:
+        connection_pool.putconn(conn)
+
+def setup_database():
     """
     Crea las tablas de la base de datos si no existen y carga los datos iniciales.
     """
-    cursor = conn.cursor()
-    
-    # Crear tablas si no existen
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS puntos_carretera (
-            id SERIAL PRIMARY KEY,
-            carretera TEXT,
-            kilometro REAL,
-            kilometro_texto TEXT,
-            latitud REAL,
-            longitud REAL,
-            UNIQUE (kilometro_texto, carretera)
-        );
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS incidencias (
-            id TEXT PRIMARY KEY,
-            carretera TEXT,
-            kilometro TEXT,
-            latitud REAL,
-            longitud REAL,
-            tipo TEXT,
-            fecha TEXT,
-            descripcion TEXT,
-            kml_file TEXT
-        );
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS fotos_incidencia (
-            id SERIAL PRIMARY KEY,
-            incidencia_id TEXT,
-            ruta_foto TEXT,
-            FOREIGN KEY(incidencia_id) REFERENCES incidencias(id)
-        );
-    ''')
-    
-    conn.commit()
-    cursor.close()
-    
-    # Cargar datos desde los archivos KML
-    kml_dir = 'P.K'
-    for file_name in os.listdir(kml_dir):
-        if file_name.endswith('.kml'):
-            kml_path = os.path.join(kml_dir, file_name)
-            load_kml_data_into_db(kml_path)
-
-def get_db_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    # Ejecutar la configuración de la base de datos inmediatamente
-    # después de establecer la conexión para garantizar que las tablas existan.
-    setup_database(conn)
-    return conn
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Crear tablas si no existen
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS puntos_carretera (
+                id SERIAL PRIMARY KEY,
+                carretera TEXT,
+                kilometro REAL,
+                kilometro_texto TEXT,
+                latitud REAL,
+                longitud REAL,
+                UNIQUE (kilometro_texto, carretera)
+            );
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS incidencias (
+                id TEXT PRIMARY KEY,
+                carretera TEXT,
+                kilometro TEXT,
+                latitud REAL,
+                longitud REAL,
+                tipo TEXT,
+                fecha TEXT,
+                descripcion TEXT,
+                kml_file TEXT
+            );
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS fotos_incidencia (
+                id SERIAL PRIMARY KEY,
+                incidencia_id TEXT,
+                ruta_foto TEXT,
+                FOREIGN KEY(incidencia_id) REFERENCES incidencias(id)
+            );
+        ''')
+        
+        conn.commit()
+        cursor.close()
+        
+        # Cargar datos desde los archivos KML
+        kml_dir = 'P.K'
+        for file_name in os.listdir(kml_dir):
+            if file_name.endswith('.kml'):
+                kml_path = os.path.join(kml_dir, file_name)
+                load_kml_data_into_db(kml_path)
+        
+        print("Database setup completed successfully")
+        
+    except Exception as e:
+        print(f"Error setting up database: {e}")
+        raise
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 def load_kml_data_into_db(kml_path):
     """
     Carga los puntos kilométricos desde un archivo KML a la base de datos.
     """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    conn = None
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
         tree = ET.parse(kml_path)
         root = tree.getroot()
         
@@ -128,12 +160,15 @@ def load_kml_data_into_db(kml_path):
                         
         conn.commit()
         print(f"Datos cargados exitosamente desde {kml_path}")
+        
     except Exception as e:
         print(f"Error al cargar datos del KML {kml_path}: {e}")
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn)
 
 def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
+    conn = None
     try:
         # Parsear el punto kilométrico
         match = re.search(r'(\d+)\+(\d+)', punto_kilometrico_str)
@@ -168,7 +203,7 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
         ''', (carretera.upper(), metros_totales))
         punto_final = cursor.fetchone()
         
-        conn.close()
+        cursor.close()
 
         if punto_inicial and punto_final:
             km1, lat1, lon1 = punto_inicial[0], punto_inicial[1], punto_inicial[2]
@@ -192,6 +227,9 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
     except Exception as e:
         print(f"Error en interpolación: {e}")
         return None, None
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, longitud, descripcion):
     try:
@@ -260,6 +298,7 @@ def index():
 
 @app.route('/api/incidencias', methods=['GET'])
 def get_incidencias():
+    conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -288,14 +327,18 @@ def get_incidencias():
                 incidencia['google_maps_url'] = f"https://www.google.com/maps?q={incidencia['latitud']},{incidencia['longitud']}"
             incidencias.append(incidencia)
         
-        conn.close()
+        cursor.close()
         return jsonify(incidencias)
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 @app.route('/api/incidencias', methods=['POST'])
 def crear_incidencia():
+    conn = None
     try:
         data = request.get_json()
         
@@ -333,10 +376,9 @@ def crear_incidencia():
             
             conn.commit()
         except psycopg2.IntegrityError:
-            conn.close()
             return jsonify({'error': 'El ID de incidencia ya existe'}), 400
         finally:
-            conn.close()
+            cursor.close()
         
         # Generar URLs públicas
         base_url = request.host_url.rstrip('/')
@@ -362,6 +404,9 @@ def crear_incidencia():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 @app.route('/static/kml_files/<filename>')
 def serve_kml(filename):
@@ -373,6 +418,14 @@ def serve_kml(filename):
 @app.route('/health')
 def health_check():
     return jsonify({'status': 'healthy'})
+
+# Inicializar la aplicación
+try:
+    init_connection_pool()
+    setup_database()
+    print("Application initialized successfully")
+except Exception as e:
+    print(f"Error initializing application: {e}")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
