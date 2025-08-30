@@ -54,92 +54,39 @@ def release_db_connection(conn):
 
 def download_kml_files_from_github():
     """
-    Descarga los archivos KML desde GitHub con autenticación - Versión corregida
+    Descarga archivos KML via GitHub Pages (no requiere token)
     """
     try:
-        # Token de acceso personal de GitHub
-        github_token = os.environ.get('GITHUB_TOKEN')
+        # URL de GitHub Pages
+        github_pages_url = "https://miguebellocoex.github.io/Backend-incidencias/P.K/"
         
-        if not github_token:
-            print("⚠️  GITHUB_TOKEN no configurado en variables de entorno")
-            return False
+        # Lista de archivos KML esperados
+        kml_files = ["CA-35.kml", "CA-36.kml"]  # Ajusta según tus archivos
         
-        # URL del repositorio - CORREGIDA
-        owner = "MigueBelloCOEX"
-        repo = "Backend-incidencias"
-        github_api_url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
-        
-        # Headers con autenticación
-        headers = {
-            'Authorization': f'token {github_token}',
-            'Accept': 'application/vnd.github.v3+json'
-        }
-        
-        print("🔑 Conectando a GitHub API con token de autenticación...")
-        
-        # Primero listar el contenido del repositorio para encontrar la carpeta
-        response = requests.get(github_api_url, headers=headers)
-        
-        if response.status_code == 403:
-            print("❌ Error 403: Límite de tasa excedido o token inválido")
-            print(f"📋 Respuesta de GitHub: {response.text}")
-            return False
-        elif response.status_code == 404:
-            print("❌ Error 404: Repositorio no encontrado o URL incorrecta")
-            print("💡 Verifica que el repositorio exista y sea público, o que el token tenga acceso")
-            return False
-        
-        response.raise_for_status()
-        
-        # Buscar la carpeta P.K en el repositorio
-        contents = response.json()
-        pk_folder = None
-        
-        for item in contents:
-            if item['type'] == 'dir' and item['name'].lower() in ['p.k', 'pk', 'p_k']:
-                pk_folder = item
-                break
-        
-        if not pk_folder:
-            print("❌ No se encontró la carpeta P.K en el repositorio")
-            return False
-        
-        # Obtener contenido de la carpeta P.K
-        pk_url = pk_folder['url']
-        pk_response = requests.get(pk_url, headers=headers)
-        pk_response.raise_for_status()
-        
-        pk_contents = pk_response.json()
-        
-        # Descargar cada archivo KML
         downloaded_count = 0
-        for file_info in pk_contents:
-            if file_info['name'].endswith('.kml') and file_info['type'] == 'file':
-                file_name = file_info['name']
-                download_url = file_info['download_url']
+        for file_name in kml_files:
+            try:
+                download_url = f"{github_pages_url}{file_name}"
+                print(f"📥 Descargando: {download_url}")
                 
-                print(f"📥 Descargando: {file_name}")
-                
-                # Descargar el archivo
-                file_response = requests.get(download_url, headers=headers)
-                file_response.raise_for_status()
-                
-                # Guardar el archivo en la carpeta P.K
-                file_path = os.path.join('P.K', file_name)
-                with open(file_path, 'wb') as f:
-                    f.write(file_response.content)
-                
-                print(f"✅ Descargado: {file_name}")
-                downloaded_count += 1
+                file_response = requests.get(download_url)
+                if file_response.status_code == 200:
+                    file_path = os.path.join('P.K', file_name)
+                    with open(file_path, 'wb') as f:
+                        f.write(file_response.content)
+                    print(f"✅ Descargado: {file_name}")
+                    downloaded_count += 1
+                else:
+                    print(f"⚠️  No se pudo descargar: {file_name} (Status: {file_response.status_code})")
+                    
+            except Exception as e:
+                print(f"❌ Error con {file_name}: {str(e)}")
         
-        print(f"🎉 {downloaded_count} archivos KML descargados exitosamente")
-        return True
+        print(f"🎉 {downloaded_count} archivos KML descargados")
+        return downloaded_count > 0
         
-    except requests.HTTPError as e:
-        print(f"❌ Error HTTP {e.response.status_code}: {e.response.text}")
-        return False
     except Exception as e:
-        print(f"❌ Error descargando archivos KML desde GitHub: {str(e)}")
+        print(f"❌ Error descargando archivos: {str(e)}")
         return False
 
 def setup_database():
@@ -227,11 +174,12 @@ def setup_database():
         
     except Exception as e:
         print(f"❌ Error en setup_database: {e}")
-        # No hacemos raise para que la aplicación pueda iniciar
-        # incluso si hay problemas con la configuración inicial
+        import traceback
+        traceback.print_exc()
     finally:
         if conn:
             release_db_connection(conn)
+
 def load_kml_data_into_db(kml_path):
     """
     Carga los puntos kilométricos desde un archivo KML a la base de datos.
@@ -244,44 +192,58 @@ def load_kml_data_into_db(kml_path):
         tree = ET.parse(kml_path)
         root = tree.getroot()
         
+        # Namespace de KML
+        ns = {'kml': 'http://www.opengis.net/kml/2.2'}
+        
+        print(f"📖 Leyendo archivo: {kml_path}")
+        
         # Buscar Placemarks que contienen los puntos kilométricos
-        for placemark in root.findall('.//{http://www.opengis.net/kml/2.2}Placemark'):
-            name_elem = placemark.find('{http://www.opengis.net/kml/2.2}name')
-            point_elem = placemark.find('{http://www.opengis.net/kml/2.2}Point')
+        for placemark in root.findall('.//kml:Placemark', ns):
+            name_elem = placemark.find('kml:name', ns)
+            point_elem = placemark.find('kml:Point', ns)
             
             if name_elem is not None and point_elem is not None:
                 name_text = name_elem.text.strip()
-                coordinates_elem = point_elem.find('{http://www.opengis.net/kml/2.2}coordinates')
+                coordinates_elem = point_elem.find('kml:coordinates', ns)
                 
                 if coordinates_elem is not None:
                     coords = coordinates_elem.text.strip().split(',')
-                    longitud = float(coords[0])
-                    latitud = float(coords[1])
-                    
-                    # Parsear el nombre para obtener la carretera y el PK
-                    match = re.search(r'([A-Z]+-\d+)\s+([\d+]+)', name_text)
-                    if match:
-                        carretera = match.group(1)
-                        kilometro_texto = match.group(2)
+                    if len(coords) >= 2:
+                        longitud = float(coords[0])
+                        latitud = float(coords[1])
                         
-                        # Convertir PK a metros para el campo 'kilometro'
-                        km_partes = kilometro_texto.split('+')
-                        km_entero = int(km_partes[0])
-                        km_metros = int(km_partes[1])
-                        kilometro = km_entero * 1000 + km_metros
+                        print(f"📍 Punto encontrado: {name_text} -> {latitud}, {longitud}")
                         
-                        # Usamos INSERT ON CONFLICT para evitar duplicados si el script se ejecuta más de una vez
-                        cursor.execute('''
-                            INSERT INTO puntos_carretera (carretera, kilometro, kilometro_texto, latitud, longitud)
-                            VALUES (%s, %s, %s, %s, %s)
-                            ON CONFLICT (kilometro_texto, carretera) DO NOTHING;
-                        ''', (carretera, kilometro, kilometro_texto, latitud, longitud))
-                        
+                        # Parsear el nombre para obtener la carretera y el PK
+                        match = re.search(r'([A-Z]+-\d+)\s+([\d+]+\+[\d+]+)', name_text)
+                        if match:
+                            carretera = match.group(1)
+                            kilometro_texto = match.group(2)
+                            
+                            print(f"   Carretera: {carretera}, PK: {kilometro_texto}")
+                            
+                            # Convertir PK a metros para el campo 'kilometro'
+                            km_partes = kilometro_texto.split('+')
+                            km_entero = int(km_partes[0])
+                            km_metros = int(km_partes[1])
+                            kilometro = km_entero * 1000 + km_metros
+                            
+                            # Insertar en base de datos
+                            cursor.execute('''
+                                INSERT INTO puntos_carretera (carretera, kilometro, kilometro_texto, latitud, longitud)
+                                VALUES (%s, %s, %s, %s, %s)
+                                ON CONFLICT (kilometro_texto, carretera) DO NOTHING;
+                            ''', (carretera, kilometro, kilometro_texto, latitud, longitud))
+                        else:
+                            print(f"⚠️  No se pudo parsear: {name_text}")
+        
         conn.commit()
-        print(f"Datos cargados exitosamente desde {kml_path}")
+        print(f"✅ Datos cargados exitosamente desde {kml_path}")
         
     except Exception as e:
-        print(f"Error al cargar datos del KML {kml_path}: {e}")
+        print(f"❌ Error al cargar datos del KML {kml_path}: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         if conn:
             release_db_connection(conn)
@@ -289,25 +251,41 @@ def load_kml_data_into_db(kml_path):
 def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
     conn = None
     try:
+        print(f"🔍 Buscando coordenadas para: {carretera} - {punto_kilometrico_str}")
+        
         # Parsear el punto kilométrico
         match = re.search(r'(\d+)\+(\d+)', punto_kilometrico_str)
         if match:
             km_entero = int(match.group(1))
             km_metros = int(match.group(2))
             metros_totales = km_entero * 1000 + km_metros
+            print(f"📏 Metros totales: {metros_totales}")
         else:
             try:
                 kilometro_decimal = float(punto_kilometrico_str)
                 metros_totales = kilometro_decimal * 1000
+                print(f"📏 Metros totales (decimal): {metros_totales}")
             except ValueError:
+                print("❌ Formato de PK inválido")
                 return None, None
 
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Verificar si hay datos para esta carretera
+        cursor.execute('''
+            SELECT COUNT(*) FROM puntos_carretera WHERE carretera = %s
+        ''', (carretera.upper(),))
+        count = cursor.fetchone()[0]
+        print(f"📊 Puntos en DB para {carretera}: {count}")
+        
+        if count == 0:
+            print("❌ No hay puntos de referencia para esta carretera")
+            return None, None
+        
         # Buscar puntos de referencia
         cursor.execute('''
-            SELECT kilometro, latitud, longitud 
+            SELECT kilometro, kilometro_texto, latitud, longitud 
             FROM puntos_carretera 
             WHERE carretera = %s AND kilometro <= %s
             ORDER BY kilometro DESC LIMIT 1
@@ -315,7 +293,7 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
         punto_inicial = cursor.fetchone()
         
         cursor.execute('''
-            SELECT kilometro, latitud, longitud 
+            SELECT kilometro, kilometro_texto, latitud, longitud 
             FROM puntos_carretera 
             WHERE carretera = %s AND kilometro >= %s
             ORDER BY kilometro ASC LIMIT 1
@@ -324,27 +302,45 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
         
         cursor.close()
 
+        if punto_inicial:
+            print(f"📌 Punto inicial: {punto_inicial[1]} ({punto_inicial[0]}m)")
+        if punto_final:
+            print(f"📌 Punto final: {punto_final[1]} ({punto_final[0]}m)")
+
         if punto_inicial and punto_final:
-            km1, lat1, lon1 = punto_inicial[0], punto_inicial[1], punto_inicial[2]
-            km2, lat2, lon2 = punto_final[0], punto_final[1], punto_final[2]
+            km1, texto1, lat1, lon1 = punto_inicial
+            km2, texto2, lat2, lon2 = punto_final
             
             if km1 == metros_totales:
+                print("✅ Coincidencia exacta con punto inicial")
                 return lat1, lon1
             if km2 == metros_totales:
+                print("✅ Coincidencia exacta con punto final")
                 return lat2, lon2
             
             if km2 != km1:
                 proporcion = (metros_totales - km1) / (km2 - km1)
                 latitud_interpolada = lat1 + (lat2 - lat1) * proporcion
                 longitud_interpolada = lon1 + (lon2 - lon1) * proporcion
+                print(f"📐 Interpolación: {proporcion:.3f}")
                 return latitud_interpolada, longitud_interpolada
             else:
+                print("✅ Mismo punto, usando coordenadas del punto")
                 return lat1, lon1
+        elif punto_inicial:
+            print("⚠️  Solo punto inicial encontrado, usando sus coordenadas")
+            return punto_inicial[2], punto_inicial[3]
+        elif punto_final:
+            print("⚠️  Solo punto final encontrado, usando sus coordenadas")
+            return punto_final[2], punto_final[3]
         
+        print("❌ No se encontraron puntos de referencia")
         return None, None
         
     except Exception as e:
-        print(f"Error en interpolación: {e}")
+        print(f"❌ Error en interpolación: {e}")
+        import traceback
+        traceback.print_exc()
         return None, None
     finally:
         if conn:
@@ -538,6 +534,41 @@ def serve_kml(filename):
 def health_check():
     return jsonify({'status': 'healthy'})
 
+@app.route('/api/debug/carreteras')
+def debug_carreteras():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Obtener todas las carreteras disponibles
+        cursor.execute('SELECT DISTINCT carretera FROM puntos_carretera ORDER BY carretera')
+        carreteras = [row[0] for row in cursor.fetchall()]
+        
+        # Obtener conteo de puntos por carretera
+        cursor.execute('''
+            SELECT carretera, COUNT(*) as puntos 
+            FROM puntos_carretera 
+            GROUP BY carretera 
+            ORDER BY carretera
+        ''')
+        stats = [{'carretera': row[0], 'puntos': row[1]} for row in cursor.fetchall()]
+        
+        cursor.close()
+        
+        return jsonify({
+            'carreteras_disponibles': carreteras,
+            'estadisticas': stats,
+            'total_carreteras': len(carreteras),
+            'total_puntos': sum([s['puntos'] for s in stats])
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
+
 # Ruta para forzar la descarga de KML desde GitHub
 @app.route('/api/descargar-kml', methods=['POST'])
 def descargar_kml():
@@ -560,5 +591,3 @@ except Exception as e:
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
