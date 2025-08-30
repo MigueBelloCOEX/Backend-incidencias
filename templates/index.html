@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Incidencias Vial</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .card {
+            margin-bottom: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            border-radius: 12px 12px 0 0;
+            font-weight: bold;
+        }
+        .kml-link {
+            word-break: break-all;
+            font-size: 0.9em;
+            color: #007bff;
+        }
+        .kml-link:hover {
+            text-decoration: underline;
+        }
+        .table-responsive {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-5 text-primary">🚧 Enlaces incidencias COEX CA03</h1>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📝 Registrar Nueva Incidencia</h5>
+            </div>
+            <div class="card-body">
+                <form id="incidenciaForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">🆔 ID de Incidencia</label>
+                                <input type="text" class="form-control" id="id" required placeholder="Ej: INC-001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">🛣️ Carretera</label>
+                                <input type="text" class="form-control" id="carretera" required placeholder="Ej: CA-35">
+                                <div class="form-text">Carreteras disponibles: CA-35, CA-36</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">📍 Punto Kilométrico</label>
+                                <input type="text" class="form-control" id="kilometro" required placeholder="Ej: 0+100 o 1.5">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">⚠️ Tipo de Incidencia</label>
+                                <select class="form-select" id="tipo" required>
+                                    <option value="">Seleccionar tipo...</option>
+                                    <option value="accidente">🚗 Accidente</option>
+                                    <option value="obra">🚧 Obra</option>
+                                    <option value="clima">🌧️ Clima</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">📝 Descripción</label>
+                                <textarea class="form-control" id="descripcion" rows="3" placeholder="Descripción detallada de la incidencia..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        💾 Guardar Incidencia
+                    </button>
+                </form>
+
+                <div id="loading" class="mt-4 text-center" style="display: none;">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <p class="mt-2 text-info">Procesando incidencia...</p>
+                </div>
+
+                <div id="resultado" class="mt-4" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6>✅ ¡Incidencia registrada exitosamente!</h6>
+                        <div class="mt-2">
+                            <strong>🔗 Enlaces generados:</strong>
+                            <div class="kml-link mt-2">
+                                <strong>🗺️ KML:</strong> 
+                                <a href="#" id="kmlUrlLink" target="_blank"></a>
+                            </div>
+                            <div class="kml-link mt-2">
+                                <strong>🌍 Google Earth:</strong> 
+                                <a href="#" id="earthUrlLink" target="_blank"></a>
+                            </div>
+                            <div class="kml-link mt-2">
+                                <strong>🗺️ Google Maps:</strong> 
+                                <a href="#" id="mapsUrlLink" target="_blank"></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="error" class="alert alert-danger mt-4" style="display: none;">
+                    <span id="errorMessage"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">📋 Incidencias Registradas</h5>
+            </div>
+            <div class="card-body">
+                <div id="loadingIncidencias" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando incidencias...</p>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th>ID</th>
+                                <th>Carretera</th>
+                                <th>PK</th>
+                                <th>Tipo</th>
+                                <th>Coordenadas</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incidenciasTable">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div id="noIncidencias" class="text-center mt-3" style="display: none;">
+                    <p class="text-muted">No hay incidencias registradas todavía.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarIncidencias();
+        });
+
+        document.getElementById('incidenciaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            document.getElementById('resultado').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            const formData = {
+                id: document.getElementById('id').value.trim(),
+                carretera: document.getElementById('carretera').value.trim(),
+                kilometro: document.getElementById('kilometro').value.trim(),
+                tipo: document.getElementById('tipo').value,
+                descripcion: document.getElementById('descripcion').value.trim()
+            };
+
+            try {
+                const response = await fetch('https://backend-incidencia.onrender.com/api/incidencias', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (response.ok) { // Using response.ok for better error handling
+                    document.getElementById('kmlUrlLink').href = result.kml_url;
+                    document.getElementById('kmlUrlLink').textContent = result.kml_url;
+                    
+                    document.getElementById('earthUrlLink').href = result.google_earth_url;
+                    document.getElementById('earthUrlLink').textContent = result.google_earth_url;
+                    
+                    document.getElementById('mapsUrlLink').href = result.google_maps_url;
+                    document.getElementById('mapsUrlLink').textContent = result.google_maps_url;
+                    
+                    document.getElementById('resultado').style.display = 'block';
+                    document.getElementById('incidenciaForm').reset();
+                    cargarIncidencias();
+                } else {
+                    document.getElementById('errorMessage').textContent = result.error || 'Ocurrió un error inesperado.';
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('errorMessage').textContent = 'Error de conexión: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        });
+
+        async function cargarIncidencias() {
+            try {
+                const loadingIncidencias = document.getElementById('loadingIncidencias');
+                loadingIncidencias.style.display = 'block';
+
+                const response = await fetch('https://backend-incidencia.onrender.com/api/incidencias');
+                const incidencias = await response.json();
+
+                const tableBody = document.getElementById('incidenciasTable');
+                const noIncidencias = document.getElementById('noIncidencias');
+                
+                loadingIncidencias.style.display = 'none';
+                tableBody.innerHTML = '';
+
+                if (incidencias.length === 0) {
+                    noIncidencias.style.display = 'block';
+                    return;
+                }
+
+                noIncidencias.style.display = 'none';
+
+                incidencias.forEach(incidencia => {
+                    const row = document.createElement('tr');
+                    let tipoIcon = '';
+                    if (incidencia.tipo === 'accidente') tipoIcon = '🚗';
+                    else if (incidencia.tipo === 'obra') tipoIcon = '🚧';
+                    else tipoIcon = '🌧️';
+
+                    row.innerHTML = `
+                        <td>${incidencia.id}</td>
+                        <td>${incidencia.carretera}</td>
+                        <td>${incidencia.kilometro}</td>
+                        <td>${tipoIcon} ${incidencia.tipo}</td>
+                        <td>${incidencia.latitud?.toFixed(6) || 'N/A'}, ${incidencia.longitud?.toFixed(6) || 'N/A'}</td>
+                        <td>${incidencia.fecha || 'N/A'}</td>
+                        <td>
+                            ${incidencia.kml_url ? `
+                                <a href="${incidencia.google_earth_url}" target="_blank" class="btn btn-sm btn-success me-1" title="Abrir en Google Earth">🌍</a>
+                                <a href="${incidencia.google_maps_url}" target="_blank" class="btn btn-sm btn-primary me-1" title="Abrir en Google Maps">🗺️</a>
+                                <a href="${incidencia.kml_url}" target="_blank" class="btn btn-sm btn-secondary" title="Descargar KML">📁</a>
+                            ` : 'Sin KML'}
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error cargando incidencias:', error);
+                document.getElementById('loadingIncidencias').style.display = 'none';
+                document.getElementById('noIncidencias').style.display = 'block';
+                document.getElementById('noIncidencias').innerHTML = `<p class="text-danger">Error cargando incidencias: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
