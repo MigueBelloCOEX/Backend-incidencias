@@ -97,14 +97,28 @@ def setup_database():
         conn.commit()
         cursor.close()
         
-        # Cargar datos desde los archivos KML
-        kml_dir = 'P.K'
-        for file_name in os.listdir(kml_dir):
-            if file_name.endswith('.kml'):
-                kml_path = os.path.join(kml_dir, file_name)
-                load_kml_data_into_db(kml_path)
+        # Verificar si ya hay datos en la tabla
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM puntos_carretera')
+        count = cursor.fetchone()[0]
+        cursor.close()
         
-        print("Database setup completed successfully")
+        print(f"Puntos de carretera en BD: {count}")
+        
+        # Solo cargar datos si la tabla está vacía
+        if count == 0:
+            print("Cargando datos desde archivos KML...")
+            kml_dir = 'P.K'
+            if os.path.exists(kml_dir):
+                for file_name in os.listdir(kml_dir):
+                    if file_name.endswith('.kml'):
+                        kml_path = os.path.join(kml_dir, file_name)
+                        print(f"Procesando: {kml_path}")
+                        load_kml_data_into_db(kml_path)
+            else:
+                print(f"Directorio {kml_dir} no existe")
+        else:
+            print("La tabla ya contiene datos, omitiendo carga inicial")
         
     except Exception as e:
         print(f"Error setting up database: {e}")
@@ -170,25 +184,44 @@ def load_kml_data_into_db(kml_path):
 def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
     conn = None
     try:
+        print(f"Buscando coordenadas para: {carretera} - PK: {punto_kilometrico_str}")
+        
         # Parsear el punto kilométrico
         match = re.search(r'(\d+)\+(\d+)', punto_kilometrico_str)
         if match:
             km_entero = int(match.group(1))
             km_metros = int(match.group(2))
             metros_totales = km_entero * 1000 + km_metros
+            print(f"PK parseado: {km_entero} km + {km_metros} m = {metros_totales} m totales")
         else:
             try:
                 kilometro_decimal = float(punto_kilometrico_str)
                 metros_totales = kilometro_decimal * 1000
+                print(f"PK decimal: {kilometro_decimal} km = {metros_totales} m totales")
             except ValueError:
+                print(f"Formato de PK inválido: {punto_kilometrico_str}")
                 return None, None
 
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Verificar si existen puntos para esta carretera
+        cursor.execute('''
+            SELECT COUNT(*) FROM puntos_carretera WHERE carretera = %s
+        ''', (carretera.upper(),))
+        count = cursor.fetchone()[0]
+        print(f"Puntos encontrados para carretera {carretera}: {count}")
+        
+        if count == 0:
+            # Listar todas las carreteras disponibles
+            cursor.execute('SELECT DISTINCT carretera FROM puntos_carretera ORDER BY carretera')
+            carreteras_disponibles = [row[0] for row in cursor.fetchall()]
+            print(f"Carreteras disponibles: {carreteras_disponibles}")
+            return None, None
+        
         # Buscar puntos de referencia
         cursor.execute('''
-            SELECT kilometro, latitud, longitud 
+            SELECT kilometro, latitud, longitud, kilometro_texto
             FROM puntos_carretera 
             WHERE carretera = %s AND kilometro <= %s
             ORDER BY kilometro DESC LIMIT 1
@@ -196,7 +229,7 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
         punto_inicial = cursor.fetchone()
         
         cursor.execute('''
-            SELECT kilometro, latitud, longitud 
+            SELECT kilometro, latitud, longitud, kilometro_texto
             FROM puntos_carretera 
             WHERE carretera = %s AND kilometro >= %s
             ORDER BY kilometro ASC LIMIT 1
@@ -205,24 +238,34 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
         
         cursor.close()
 
+        print(f"Punto inicial: {punto_inicial}")
+        print(f"Punto final: {punto_final}")
+
         if punto_inicial and punto_final:
-            km1, lat1, lon1 = punto_inicial[0], punto_inicial[1], punto_inicial[2]
-            km2, lat2, lon2 = punto_final[0], punto_final[1], punto_final[2]
+            km1, lat1, lon1, texto1 = punto_inicial
+            km2, lat2, lon2, texto2 = punto_final
+            
+            print(f"Puntos encontrados: {texto1} ({km1}m) y {texto2} ({km2}m)")
             
             if km1 == metros_totales:
+                print(f"Coincidencia exacta con {texto1}")
                 return lat1, lon1
             if km2 == metros_totales:
+                print(f"Coincidencia exacta con {texto2}")
                 return lat2, lon2
             
             if km2 != km1:
                 proporcion = (metros_totales - km1) / (km2 - km1)
                 latitud_interpolada = lat1 + (lat2 - lat1) * proporcion
                 longitud_interpolada = lon1 + (lon2 - lon1) * proporcion
+                print(f"Interpolación: proporción {proporcion:.3f}, lat: {latitud_interpolada:.6f}, lon: {longitud_interpolada:.6f}")
                 return latitud_interpolada, longitud_interpolada
             else:
+                print("Puntos idénticos, usando punto inicial")
                 return lat1, lon1
-        
-        return None, None
+        else:
+            print("No se encontraron puntos de referencia para interpolación")
+            return None, None
         
     except Exception as e:
         print(f"Error en interpolación: {e}")
@@ -400,6 +443,110 @@ def crear_incidencia():
                 'longitud': longitud,
                 'descripcion': descripcion
             }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
+
+@app.route('/api/debug/carreteras', methods=['GET'])
+def debug_carreteras():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Obtener todas las carreteras disponibles
+        cursor.execute('SELECT DISTINCT carretera FROM puntos_carretera ORDER BY carretera')
+        carreteras = [row[0] for row in cursor.fetchall()]
+        
+        # Obtener conteo de puntos por carretera
+        cursor.execute('''
+            SELECT carretera, COUNT(*) as puntos 
+            FROM puntos_carretera 
+            GROUP BY carretera 
+            ORDER BY carretera
+        ''')
+        estadisticas = []
+        for row in cursor.fetchall():
+            estadisticas.append({
+                'carretera': row[0],
+                'puntos': row[1],
+                'rango_km': obtener_rango_kilometros(row[0])
+            })
+        
+        cursor.close()
+        
+        return jsonify({
+            'carreteras_disponibles': carreteras,
+            'estadisticas': estadisticas,
+            'total_carreteras': len(carreteras),
+            'total_puntos': sum(stat['puntos'] for stat in estadisticas)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
+
+def obtener_rango_kilometros(carretera):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT MIN(kilometro_texto), MAX(kilometro_texto) 
+            FROM puntos_carretera 
+            WHERE carretera = %s
+        ''', (carretera,))
+        
+        resultado = cursor.fetchone()
+        cursor.close()
+        
+        if resultado and resultado[0] and resultado[1]:
+            return f"{resultado[0]} - {resultado[1]}"
+        else:
+            return "No disponible"
+            
+    except Exception as e:
+        return f"Error: {str(e)}"
+    finally:
+        if conn:
+            release_db_connection(conn)
+
+@app.route('/api/debug/puntos/<carretera>', methods=['GET'])
+def debug_puntos_carretera(carretera):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT kilometro_texto, kilometro, latitud, longitud 
+            FROM puntos_carretera 
+            WHERE carretera = %s 
+            ORDER BY kilometro
+        ''', (carretera.upper(),))
+        
+        puntos = []
+        for row in cursor.fetchall():
+            puntos.append({
+                'kilometro_texto': row[0],
+                'kilometro_metros': row[1],
+                'latitud': row[2],
+                'longitud': row[3]
+            })
+        
+        cursor.close()
+        
+        return jsonify({
+            'carretera': carretera.upper(),
+            'puntos': puntos,
+            'total_puntos': len(puntos)
         })
         
     except Exception as e:
