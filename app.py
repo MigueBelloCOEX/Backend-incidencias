@@ -348,17 +348,30 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
         if conn:
             release_db_connection(conn)
 
-def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, longitud, descripcion):
+def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, longitud, descripcion, fotos_urls=None):
     try:
+        if fotos_urls is None:
+            fotos_urls = []
+        
         # Determinar el icono según el tipo de incidencia
-        if tipo == "accidente":
+        if tipo.lower() == "accidente":
             icon_url = "https://earth.google.com/earth/document/icon?color=ff0000&id=2000&scale=4"  # Rojo
-        elif tipo == "obra":
+        elif tipo.lower() == "obra":
             icon_url = "https://earth.google.com/earth/document/icon?color=ffff00&id=2000&scale=4"  # Amarillo
         else:
             icon_url = "https://earth.google.com/earth/document/icon?color=0000ff&id=2000&scale=4"  # Azul
 
-        # Crear KML con la estructura compatible con Google Earth
+        # Crear contenido HTML para las fotos
+        fotos_html = ""
+        if fotos_urls:
+            fotos_html = "<h4>Fotos:</h4><div>"
+            for foto_url in fotos_urls:
+                fotos_html += f'<img src="{foto_url}" width="200" style="margin:5px;"><br>'
+            fotos_html += "</div>"
+        else:
+            fotos_html = "<p>No hay fotos disponibles</p>"
+
+        # Crear KML con la estructura compatible
         kml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
 <Document>
@@ -381,6 +394,7 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
         <p><strong>Fecha:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         <p><strong>Descripción:</strong> {descripcion}</p>
         <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+        {fotos_html}
       ]]></text>
     </BalloonStyle>
   </Style>
@@ -415,6 +429,7 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
       <p><strong>Fecha:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
       <p><strong>Descripción:</strong> {descripcion}</p>
       <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+      {fotos_html}
     ]]></description>
     <LookAt>
       <longitude>{longitud}</longitude>
@@ -498,7 +513,13 @@ def get_incidencias():
 def crear_incidencia():
     conn = None
     try:
-        data = request.get_json()
+        # Manejar tanto JSON como form-data (para fotos)
+        if request.content_type.startswith('multipart/form-data'):
+            data = request.form.to_dict()
+            files = request.files.getlist('fotos')
+        else:
+            data = request.get_json()
+            files = []
         
         incidencia_id = data.get('id')
         carretera = data.get('carretera')
@@ -515,8 +536,19 @@ def crear_incidencia():
         if not latitud or not longitud:
             return jsonify({'error': 'No se pudieron obtener las coordenadas para la carretera y PK especificados'}), 400
         
-        # Crear KML
-        kml_filename = crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, longitud, descripcion)
+        # Procesar fotos si las hay
+        fotos_urls = []
+        if files:
+            for file in files:
+                if file.filename:
+                    filename = f"{incidencia_id}_{file.filename}"
+                    file_path = os.path.join('static/fotos', filename)
+                    file.save(file_path)
+                    base_url = request.host_url.rstrip('/')
+                    fotos_urls.append(f"{base_url}/static/fotos/{filename}")
+        
+        # Crear KML con fotos
+        kml_filename = crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, longitud, descripcion, fotos_urls)
         
         if not kml_filename:
             return jsonify({'error': 'Error creando archivo KML'}), 500
@@ -531,6 +563,13 @@ def crear_incidencia():
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (incidencia_id, carretera.upper(), kilometro, latitud, longitud, tipo, 
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'), descripcion, kml_filename))
+            
+            # Guardar información de fotos en la base de datos
+            for foto_url in fotos_urls:
+                cursor.execute('''
+                    INSERT INTO fotos_incidencia (incidencia_id, ruta_foto)
+                    VALUES (%s, %s)
+                ''', (incidencia_id, foto_url))
             
             conn.commit()
         except psycopg2.IntegrityError:
@@ -556,7 +595,8 @@ def crear_incidencia():
                 'tipo': tipo,
                 'latitud': latitud,
                 'longitud': longitud,
-                'descripcion': descripcion
+                'descripcion': descripcion,
+                'fotos': fotos_urls
             }
         })
         
@@ -575,6 +615,13 @@ def serve_kml(filename):
         return response
     except FileNotFoundError:
         return jsonify({'error': 'Archivo KML no encontrado'}), 404
+
+@app.route('/static/fotos/<filename>')
+def serve_foto(filename):
+    try:
+        return send_file(os.path.join('static/fotos', filename))
+    except FileNotFoundError:
+        return jsonify({'error': 'Foto no encontrada'}), 404
 
 @app.route('/health')
 def health_check():
@@ -681,4 +728,3 @@ except Exception as e:
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
-
