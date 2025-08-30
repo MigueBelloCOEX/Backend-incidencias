@@ -350,14 +350,64 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
 
 def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, longitud, descripcion):
     try:
-        # Crear KML manualmente con formato simple y bien estructurado
+        # Determinar el icono según el tipo de incidencia
+        if tipo == "accidente":
+            icon_url = "https://earth.google.com/earth/document/icon?color=ff0000&id=2000&scale=4"  # Rojo
+        elif tipo == "obra":
+            icon_url = "https://earth.google.com/earth/document/icon?color=ffff00&id=2000&scale=4"  # Amarillo
+        else:
+            icon_url = "https://earth.google.com/earth/document/icon?color=0000ff&id=2000&scale=4"  # Azul
+
+        # Crear KML con la estructura compatible con Google Earth
         kml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
 <Document>
+  <Style id="normalStyle">
+    <IconStyle>
+      <scale>1.2</scale>
+      <Icon>
+        <href>{icon_url}</href>
+      </Icon>
+      <hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+    </IconStyle>
+    <LabelStyle>
+    </LabelStyle>
+    <BalloonStyle>
+      <text><![CDATA[
+        <h3>Incidencia Vial $[name]</h3>
+        <p><strong>Carretera:</strong> {carretera}</p>
+        <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
+        <p><strong>Tipo:</strong> {tipo}</p>
+        <p><strong>Fecha:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <p><strong>Descripción:</strong> {descripcion}</p>
+        <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+      ]]></text>
+    </BalloonStyle>
+  </Style>
+  <Style id="highlightStyle">
+    <IconStyle>
+      <scale>1.4</scale>
+      <Icon>
+        <href>{icon_url}</href>
+      </Icon>
+      <hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+    </IconStyle>
+    <LabelStyle>
+    </LabelStyle>
+  </Style>
+  <StyleMap id="incidenciaStyle">
+    <Pair>
+      <key>normal</key>
+      <styleUrl>#normalStyle</styleUrl>
+    </Pair>
+    <Pair>
+      <key>highlight</key>
+      <styleUrl>#highlightStyle</styleUrl>
+    </Pair>
+  </StyleMap>
   <Placemark>
     <name>Incidencia {incidencia_id}</name>
-    <description>
-      <![CDATA[
+    <description><![CDATA[
       <h3>Incidencia Vial {incidencia_id}</h3>
       <p><strong>Carretera:</strong> {carretera}</p>
       <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
@@ -365,18 +415,21 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
       <p><strong>Fecha:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
       <p><strong>Descripción:</strong> {descripcion}</p>
       <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
-      ]]>
-    </description>
+    ]]></description>
+    <LookAt>
+      <longitude>{longitud}</longitude>
+      <latitude>{latitud}</latitude>
+      <altitude>1000</altitude>
+      <heading>0</heading>
+      <tilt>0</tilt>
+      <range>1000</range>
+      <gx:fovy>30</gx:fovy>
+      <altitudeMode>relativeToGround</altitudeMode>
+    </LookAt>
+    <styleUrl>#incidenciaStyle</styleUrl>
     <Point>
       <coordinates>{longitud},{latitud},0</coordinates>
     </Point>
-    <Style>
-      <IconStyle>
-        <Icon>
-          <href>{"http://maps.google.com/mapfiles/kml/pushpin/red-pushpin.png" if tipo == "accidente" else "http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png" if tipo == "obra" else "http://maps.google.com/mapfiles/kml/pushpin/blue-pushpin.png"}</href>
-        </Icon>
-      </IconStyle>
-    </Style>
   </Placemark>
 </Document>
 </kml>"""
@@ -518,6 +571,7 @@ def serve_kml(filename):
     try:
         response = send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         response.headers['Content-Type'] = 'application/vnd.google-earth.kml+xml'
+        response.headers['Content-Disposition'] = f'inline; filename={filename}'
         return response
     except FileNotFoundError:
         return jsonify({'error': 'Archivo KML no encontrado'}), 404
@@ -627,3 +681,4 @@ except Exception as e:
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
+
