@@ -197,6 +197,9 @@ def load_kml_data_into_db(kml_path):
         
         print(f"📖 Leyendo archivo: {kml_path}")
         
+        # Obtener el nombre de la carretera del nombre del archivo
+        carretera = os.path.basename(kml_path).replace('.kml', '').upper()
+        
         # Buscar Placemarks que contienen los puntos kilométricos
         for placemark in root.findall('.//kml:Placemark', ns):
             name_elem = placemark.find('kml:name', ns)
@@ -214,19 +217,18 @@ def load_kml_data_into_db(kml_path):
                         
                         print(f"📍 Punto encontrado: {name_text} -> {latitud}, {longitud}")
                         
-                        # Parsear el nombre para obtener la carretera y el PK
-                        match = re.search(r'([A-Z]+-\d+)\s+([\d+]+\+[\d+]+)', name_text)
+                        # Parsear el nombre para obtener el PK (formato: "4 + 300")
+                        # Nuevo patrón regex más simple
+                        match = re.search(r'(\d+)\s*\+\s*(\d+)', name_text)
                         if match:
-                            carretera = match.group(1)
-                            kilometro_texto = match.group(2)
+                            km_entero = match.group(1)
+                            km_metros = match.group(2)
+                            kilometro_texto = f"{km_entero}+{km_metros}"
                             
                             print(f"   Carretera: {carretera}, PK: {kilometro_texto}")
                             
                             # Convertir PK a metros para el campo 'kilometro'
-                            km_partes = kilometro_texto.split('+')
-                            km_entero = int(km_partes[0])
-                            km_metros = int(km_partes[1])
-                            kilometro = km_entero * 1000 + km_metros
+                            kilometro = int(km_entero) * 1000 + int(km_metros)
                             
                             # Insertar en base de datos
                             cursor.execute('''
@@ -579,6 +581,33 @@ def descargar_kml():
             return jsonify({'success': False, 'message': 'Error al descargar archivos KML'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+# Ruta para reiniciar la base de datos
+@app.route('/api/reset-database', methods=['POST'])
+def reset_database():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Eliminar tablas existentes
+        cursor.execute('DROP TABLE IF EXISTS fotos_incidencia CASCADE')
+        cursor.execute('DROP TABLE IF EXISTS incidencias CASCADE')
+        cursor.execute('DROP TABLE IF EXISTS puntos_carretera CASCADE')
+        
+        conn.commit()
+        cursor.close()
+        
+        # Volver a crear las tablas
+        setup_database()
+        
+        return jsonify({'success': True, 'message': 'Base de datos reiniciada exitosamente'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 # Inicializar la aplicación
 try:
