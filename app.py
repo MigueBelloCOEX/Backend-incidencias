@@ -350,51 +350,36 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
 
 def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, longitud, descripcion):
     try:
-        # Crear elemento KML
-        kml = ET.Element("kml", xmlns="http://www.opengis.net/kml/2.2")
-        document = ET.SubElement(kml, "Document")
-        
-        placemark = ET.SubElement(document, "Placemark")
-        name = ET.SubElement(placemark, "name")
-        name.text = f"Incidencia {incidencia_id}"
-        
-        description_elem = ET.SubElement(placemark, "description")
-        
-        # Crear contenido HTML
-        desc_html = f"""
-        <h3>Incidencia Vial {incidencia_id}</h3>
-        <p><strong>Carretera:</strong> {carretera}</p>
-        <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
-        <p><strong>Tipo:</strong> {tipo}</p>
-        <p><strong>Fecha:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-        <p><strong>Descripción:</strong> {descripcion}</p>
-        <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
-        """
-        
-        description_elem.text = f"<![CDATA[{desc_html}]]>"
-        
-        # Punto con coordenadas
-        point = ET.SubElement(placemark, "Point")
-        coordinates = ET.SubElement(point, "coordinates")
-        coordinates.text = f"{longitud},{latitud},0"
-        
-        # Estilo según tipo
-        style = ET.SubElement(placemark, "Style")
-        icon_style = ET.SubElement(style, "IconStyle")
-        icon = ET.SubElement(icon_style, "Icon")
-        href = ET.SubElement(icon, "href")
-        
-        if tipo == "accidente":
-            href.text = "http://maps.google.com/mapfiles/kml/pushpin/red-pushpin.png"
-        elif tipo == "obra":
-            href.text = "http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png"
-        else:
-            href.text = "http://maps.google.com/mapfiles/kml/pushpin/blue-pushpin.png"
-        
-        # Convertir a XML
-        rough_string = ET.tostring(kml, 'utf-8')
-        reparsed = minidom.parseString(rough_string)
-        kml_content = reparsed.toprettyxml(indent="  ")
+        # Crear KML manualmente con formato simple y bien estructurado
+        kml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <Placemark>
+    <name>Incidencia {incidencia_id}</name>
+    <description>
+      <![CDATA[
+      <h3>Incidencia Vial {incidencia_id}</h3>
+      <p><strong>Carretera:</strong> {carretera}</p>
+      <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
+      <p><strong>Tipo:</strong> {tipo}</p>
+      <p><strong>Fecha:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+      <p><strong>Descripción:</strong> {descripcion}</p>
+      <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+      ]]>
+    </description>
+    <Point>
+      <coordinates>{longitud},{latitud},0</coordinates>
+    </Point>
+    <Style>
+      <IconStyle>
+        <Icon>
+          <href>{"http://maps.google.com/mapfiles/kml/pushpin/red-pushpin.png" if tipo == "accidente" else "http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png" if tipo == "obra" else "http://maps.google.com/mapfiles/kml/pushpin/blue-pushpin.png"}</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+  </Placemark>
+</Document>
+</kml>"""
         
         # Guardar archivo KML
         kml_filename = f"incidencia_{incidencia_id}.kml"
@@ -403,10 +388,13 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
         with open(kml_path, 'w', encoding='utf-8') as f:
             f.write(kml_content)
         
+        print(f"✅ KML creado: {kml_path}")
         return kml_filename
         
     except Exception as e:
         print(f"Error creando KML: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 @app.route('/')
@@ -528,7 +516,9 @@ def crear_incidencia():
 @app.route('/static/kml_files/<filename>')
 def serve_kml(filename):
     try:
-        return send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        response = send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        response.headers['Content-Type'] = 'application/vnd.google-earth.kml+xml'
+        return response
     except FileNotFoundError:
         return jsonify({'error': 'Archivo KML no encontrado'}), 404
 
@@ -570,6 +560,23 @@ def debug_carreteras():
     finally:
         if conn:
             release_db_connection(conn)
+
+@app.route('/api/debug/kml/<incidencia_id>')
+def debug_kml(incidencia_id):
+    try:
+        kml_filename = f"incidencia_{incidencia_id}.kml"
+        kml_path = os.path.join(app.config['UPLOAD_FOLDER'], kml_filename)
+        
+        if os.path.exists(kml_path):
+            with open(kml_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            return f"<pre>{content}</pre>"
+        else:
+            return jsonify({'error': 'KML no encontrado'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Ruta para forzar la descarga de KML desde GitHub
 @app.route('/api/descargar-kml', methods=['POST'])
