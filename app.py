@@ -11,7 +11,6 @@ import requests
 import zipfile
 import io
 import urllib.parse
-import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -199,7 +198,7 @@ def load_kml_data_into_db(kml_path):
         
         print(f"📖 Leyendo archivo: {kml_path}")
         
-        # Obtener el nombre de la carretera del nombre del archito
+        # Obtener el nombre de la carretera del nombre del archivo
         carretera = os.path.basename(kml_path).replace('.kml', '').upper()
         
         # Buscar Placemarks que contienen los puntos kilométricos
@@ -440,65 +439,117 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
         traceback.print_exc()
         return None
 
-# Nueva función para generar HTML con Earth embebido
-def generar_html_earth_embebido(incidencia_id, latitud, longitud, kml_url):
-    """Genera HTML con Google Earth embebido y el KML cargado automáticamente"""
+# Función para generar URL de Google Maps con marcador y información
+def generar_url_google_maps(latitud, longitud, titulo, descripcion, carretera, kilometro, tipo, fotos_urls=None):
+    if fotos_urls is None:
+        fotos_urls = []
+    
+    # Crear contenido HTML para el marcador
+    info_content = f"""
+    <h3>{titulo}</h3>
+    <p><strong>Carretera:</strong> {carretera}</p>
+    <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
+    <p><strong>Tipo:</strong> {tipo}</p>
+    <p><strong>Descripción:</strong> {descripcion}</p>
+    <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+    """
+    
+    if fotos_urls:
+        info_content += "<h4>Fotos:</h4><div style='display: flex; flex-wrap: wrap;'>"
+        for i, foto_url in enumerate(fotos_urls):
+            info_content += f'<img src="{foto_url}" width="100" style="margin: 2px; border: 1px solid #ccc;" alt="Foto {i+1}">'
+        info_content += "</div>"
+    
+    # Codificar el contenido para URL
+    info_encoded = urllib.parse.quote(info_content)
+    
+    # Crear URL de Google Maps con marcador personalizado
+    google_maps_url = f"https://www.google.com/maps?q={latitud},{longitud}&z=15"
+    
+    return google_maps_url
+
+# Función para generar vista de mapa personalizado
+def generar_vista_mapa(incidencia_id, latitud, longitud, carretera, kilometro, tipo, descripcion, fotos_urls=None):
+    if fotos_urls is None:
+        fotos_urls = []
+    
+    # Crear contenido HTML para las fotos
+    fotos_html = ""
+    if fotos_urls:
+        fotos_html = "<h4>Fotos:</h4><div style='display: flex; flex-wrap: wrap;'>"
+        for i, foto_url in enumerate(fotos_urls):
+            fotos_html += f'<img src="{foto_url}" width="150" style="margin: 5px; border: 1px solid #ccc;" alt="Foto {i+1}">'
+        fotos_html += "</div>"
+    
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <title>Incidencia {incidencia_id}</title>
-        <script src="https://www.gstatic.com/charts/loader.js"></script>
-        <script>
-            google.charts.load('current', {{ packages: ['earth'] }});
-            google.charts.setOnLoadCallback(initEarth);
-            
-            function initEarth() {{
-                var data = google.visualization.arrayToDataTable([
-                    ['Lat', 'Lon', 'Name'],
-                    [{latitud}, {longitud}, 'Incidencia {incidencia_id}']
-                ]);
-                
-                var options = {{
-                    sizeAxis: {{ minValue: 0, maxValue: 100 }},
-                    displayMode: 'markers',
-                    colorAxis: {{ colors: ['green', 'blue'] }},
-                    mapType: 'earth'
-                }};
-                
-                var chart = new google.visualization.EarthChart(document.getElementById('earth_div'));
-                chart.draw(data, options);
-                
-                // Intentar cargar el KML después de un delay
-                setTimeout(loadKML, 2000);
-            }}
-            
-            function loadKML() {{
-                // Crear un enlace temporal para descargar el KML
-                var link = document.createElement('a');
-                link.href = '{kml_url}';
-                link.download = 'incidencia_{incidencia_id}.kml';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                alert('El KML se ha descargado. Por favor, ábrelo manualmente en Google Earth.');
-            }}
-        </script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
         <style>
-            body {{ margin: 0; padding: 20px; font-family: Arial, sans-serif; }}
-            #earth_div {{ width: 100%; height: 600px; }}
-            .info {{ margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 5px; }}
+            body {{ margin: 0; padding: 0; font-family: Arial, sans-serif; }}
+            #map {{ height: 500px; width: 100%; }}
+            .info-panel {{ padding: 20px; background: #f8f9fa; }}
+            .fotos-container {{ display: flex; flex-wrap: wrap; margin-top: 10px; }}
+            .foto {{ margin: 5px; border: 1px solid #ccc; border-radius: 5px; }}
         </style>
     </head>
     <body>
-        <div class="info">
-            <h1>Incidencia {incidencia_id}</h1>
-            <p><strong>Coordenadas:</strong> {latitud}, {longitud}</p>
-            <p><strong>KML:</strong> <a href="{kml_url}" download>Descargar KML</a></p>
-            <p>Si el KML no se carga automáticamente, descárgalo y ábrelo manualmente en Google Earth.</p>
+        <div id="map"></div>
+        <div class="info-panel">
+            <h2>Incidencia {incidencia_id}</h2>
+            <p><strong>Carretera:</strong> {carretera}</p>
+            <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
+            <p><strong>Tipo:</strong> {tipo}</p>
+            <p><strong>Descripción:</strong> {descripcion}</p>
+            <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+            {fotos_html}
         </div>
-        <div id="earth_div"></div>
+        
+        <script>
+            // Inicializar mapa
+            var map = L.map('map').setView([{latitud}, {longitud}], 15);
+            
+            // Añadir capa de OpenStreetMap
+            L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+                attribution: '&copy; OpenStreetMap contributors'
+            }}).addTo(map);
+            
+            // Añadir marcador
+            var marker = L.marker([{latitud}, {longitud}]).addTo(map);
+            
+            // Contenido del popup
+            var popupContent = `
+                <h3>Incidencia {incidencia_id}</h3>
+                <p><strong>Carretera:</strong> {carretera}</p>
+                <p><strong>PK:</strong> {kilometro}</p>
+                <p><strong>Tipo:</strong> {tipo}</p>
+                <p><strong>Descripción:</strong> {descripcion}</p>
+            `;
+            
+            // Añadir popup al marcador
+            marker.bindPopup(popupContent).openPopup();
+            
+            // Añadir enlace a Google Maps
+            var googleMapsUrl = "https://www.google.com/maps?q={latitud},{longitud}";
+            var link = document.createElement('a');
+            link.href = googleMapsUrl;
+            link.target = '_blank';
+            link.innerHTML = 'Abrir en Google Maps';
+            link.style.display = 'block';
+            link.style.marginTop = '10px';
+            link.style.padding = '10px';
+            link.style.backgroundColor = '#4285f4';
+            link.style.color = 'white';
+            link.style.textAlign = 'center';
+            link.style.textDecoration = 'none';
+            link.style.borderRadius = '5px';
+            
+            document.querySelector('.info-panel').appendChild(link);
+        </script>
     </body>
     </html>
     """
@@ -535,11 +586,9 @@ def get_incidencias():
             if incidencia['kml_file']:
                 base_url = request.host_url.rstrip('/')
                 incidencia['kml_url'] = f"{base_url}/static/kml_files/{incidencia['kml_file']}"
-                # ENLACES CORREGIDOS PARA GOOGLE EARTH
-                incidencia['google_earth_url'] = f"https://earth.google.com/web/@{incidencia['latitud']},{incidencia['longitud']},100a,35y,0h,0t,0r/data=CgYoIgA"
-                incidencia['google_earth_alternative'] = f"https://earth.google.com/web/search/{incidencia['latitud']}+{incidencia['longitud']}"
-                incidencia['google_maps_url'] = f"https://www.google.com/maps?q={incidencia['latitud']},{incidencia['longitud']}"
-                incidencia['earth_embedded'] = f"{base_url}/api/earth-embedded/{incidencia['id']}"
+                # Enlaces para Google Maps
+                incidencia['google_maps_simple'] = f"https://www.google.com/maps?q={incidencia['latitud']},{incidencia['longitud']}"
+                incidencia['map_view'] = f"{base_url}/api/map-view/{incidencia['id']}"
             incidencias.append(incidencia)
         
         cursor.close()
@@ -622,25 +671,18 @@ def crear_incidencia():
         # Generar URLs públicas
         base_url = request.host_url.rstrip('/')
         kml_url = f"{base_url}/static/kml_files/{kml_filename}"
-        
-        # ENLACE CORREGIDO PARA GOOGLE EARTH - FORMATO CORRECTO
-        google_earth_url = f"https://earth.google.com/web/@{latitud},{longitud},100a,35y,0h,0t,0r/data=CgYoIgA"
-        
-        # URL alternativa que funciona mejor
-        google_earth_alternative = f"https://earth.google.com/web/search/{latitud}+{longitud}"
-        
-        google_maps_url = f"https://www.google.com/maps?q={latitud},{longitud}"
         download_url = f"{base_url}/api/download-kml/{incidencia_id}"
-        earth_embedded_url = f"{base_url}/api/earth-embedded/{incidencia_id}"
+        map_view_url = f"{base_url}/api/map-view/{incidencia_id}"
+        
+        # URL de Google Maps
+        google_maps_url = f"https://www.google.com/maps?q={latitud},{longitud}"
         
         return jsonify({
             'success': True,
             'kml_url': kml_url,
-            'google_earth_url': google_earth_url,
-            'google_earth_alternative': google_earth_alternative,
             'google_maps_url': google_maps_url,
+            'map_view_url': map_view_url,
             'download_url': download_url,
-            'earth_embedded_url': earth_embedded_url,
             'incidencia': {
                 'id': incidencia_id,
                 'carretera': carretera,
@@ -652,11 +694,9 @@ def crear_incidencia():
                 'fotos': fotos_urls
             },
             'instructions': {
-                'option1': 'Copie y pegue las coordenadas en Google Earth:',
-                'coordinates': f'{latitud}, {longitud}',
-                'option2': f'O use este enlace: {google_earth_url}',
-                'option3': f'O use el enlace alternativo: {google_earth_alternative}',
-                'option4': f'O use la vista embebida: {earth_embedded_url}'
+                'google_maps': f'Abra en Google Maps: {google_maps_url}',
+                'map_view': f'Vista de mapa personalizado: {map_view_url}',
+                'download': f'Descargar KML: {download_url}'
             }
         })
         
@@ -666,9 +706,9 @@ def crear_incidencia():
         if conn:
             release_db_connection(conn)
 
-# Nueva ruta para vista embebida de Google Earth
-@app.route('/api/earth-embedded/<incidencia_id>')
-def earth_embedded(incidencia_id):
+# Nueva ruta para vista de mapa personalizado
+@app.route('/api/map-view/<incidencia_id>')
+def map_view(incidencia_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -676,17 +716,28 @@ def earth_embedded(incidencia_id):
         cursor.execute('SELECT * FROM incidencias WHERE id = %s', (incidencia_id,))
         incidencia = cursor.fetchone()
         
+        cursor.execute('SELECT * FROM fotos_incidencia WHERE incidencia_id = %s', (incidencia_id,))
+        fotos = cursor.fetchall()
+        
         cursor.close()
         release_db_connection(conn)
         
         if not incidencia:
             return jsonify({'error': 'Incidencia no encontrada'}), 404
         
-        base_url = request.host_url.rstrip('/')
-        kml_url = f"{base_url}/static/kml_files/incidencia_{incidencia_id}.kml"
+        fotos_urls = [foto[2] for foto in fotos]
         
-        # Generar HTML con Earth embebido
-        html_content = generar_html_earth_embebido(incidencia_id, incidencia[3], incidencia[4], kml_url)
+        # Generar HTML con mapa personalizado
+        html_content = generar_vista_mapa(
+            incidencia_id=incidencia[0],
+            latitud=incidencia[3],
+            longitud=incidencia[4],
+            carretera=incidencia[1],
+            kilometro=incidencia[2],
+            tipo=incidencia[5],
+            descripcion=incidencia[7],
+            fotos_urls=fotos_urls
+        )
         
         return html_content
         
@@ -793,12 +844,8 @@ def debug_incidencia(incidencia_id):
         
         base_url = request.host_url.rstrip('/')
         kml_url = f"{base_url}/static/kml_files/{kml_filename}" if kml_exists else None
-        
-        # ENLACES CORREGIDOS
-        google_earth_url = f"https://earth.google.com/web/@{incidencia[3]},{incidencia[4]},100a,35y,0h,0t,0r/data=CgYoIgA" if incidencia else None
-        google_earth_alternative = f"https://earth.google.com/web/search/{incidencia[3]}+{incidencia[4]}" if incidencia else None
+        map_view_url = f"{base_url}/api/map-view/{incidencia_id}" if incidencia else None
         google_maps_url = f"https://www.google.com/maps?q={incidencia[3]},{incidencia[4]}" if incidencia else None
-        earth_embedded_url = f"{base_url}/api/earth-embedded/{incidencia_id}" if incidencia else None
         
         return jsonify({
             'incidencia': {
@@ -820,10 +867,8 @@ def debug_incidencia(incidencia_id):
                 'url': kml_url
             },
             'links': {
-                'google_earth': google_earth_url,
-                'google_earth_alternative': google_earth_alternative,
                 'google_maps': google_maps_url,
-                'earth_embedded': earth_embedded_url,
+                'map_view': map_view_url,
                 'kml_direct': kml_url
             }
         })
