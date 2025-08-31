@@ -439,37 +439,8 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
         traceback.print_exc()
         return None
 
-# Función para generar URL de Google Maps con marcador y información
-def generar_url_google_maps(latitud, longitud, titulo, descripcion, carretera, kilometro, tipo, fotos_urls=None):
-    if fotos_urls is None:
-        fotos_urls = []
-    
-    # Crear contenido HTML para el marcador
-    info_content = f"""
-    <h3>{titulo}</h3>
-    <p><strong>Carretera:</strong> {carretera}</p>
-    <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
-    <p><strong>Tipo:</strong> {tipo}</p>
-    <p><strong>Descripción:</strong> {descripcion}</p>
-    <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
-    """
-    
-    if fotos_urls:
-        info_content += "<h4>Fotos:</h4><div style='display: flex; flex-wrap: wrap;'>"
-        for i, foto_url in enumerate(fotos_urls):
-            info_content += f'<img src="{foto_url}" width="100" style="margin: 2px; border: 1px solid #ccc;" alt="Foto {i+1}">'
-        info_content += "</div>"
-    
-    # Codificar el contenido para URL
-    info_encoded = urllib.parse.quote(info_content)
-    
-    # Crear URL de Google Maps con marcador personalizado
-    google_maps_url = f"https://www.google.com/maps?q={latitud},{longitud}&z=15"
-    
-    return google_maps_url
-
-# Función para generar vista de mapa personalizado
-def generar_vista_mapa(incidencia_id, latitud, longitud, carretera, kilometro, tipo, descripcion, fotos_urls=None):
+# Función para generar vista de mapa personalizado con Leaflet
+def generar_vista_mapa(incidencia_id, latitud, longitud, carretera, kilometro, tipo, descripcion, fecha, fotos_urls=None):
     if fotos_urls is None:
         fotos_urls = []
     
@@ -478,8 +449,16 @@ def generar_vista_mapa(incidencia_id, latitud, longitud, carretera, kilometro, t
     if fotos_urls:
         fotos_html = "<h4>Fotos:</h4><div style='display: flex; flex-wrap: wrap;'>"
         for i, foto_url in enumerate(fotos_urls):
-            fotos_html += f'<img src="{foto_url}" width="150" style="margin: 5px; border: 1px solid #ccc;" alt="Foto {i+1}">'
+            fotos_html += f'<img src="{foto_url}" width="150" style="margin: 5px; border: 1px solid #ccc; border-radius: 5px;" alt="Foto {i+1}">'
         fotos_html += "</div>"
+    
+    # Determinar color según el tipo
+    if tipo.lower() == "accidente":
+        marker_color = "red"
+    elif tipo.lower() == "obra":
+        marker_color = "orange"
+    else:
+        marker_color = "blue"
     
     html_content = f"""
     <!DOCTYPE html>
@@ -489,66 +468,134 @@ def generar_vista_mapa(incidencia_id, latitud, longitud, carretera, kilometro, t
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
         <style>
             body {{ margin: 0; padding: 0; font-family: Arial, sans-serif; }}
             #map {{ height: 500px; width: 100%; }}
-            .info-panel {{ padding: 20px; background: #f8f9fa; }}
-            .fotos-container {{ display: flex; flex-wrap: wrap; margin-top: 10px; }}
-            .foto {{ margin: 5px; border: 1px solid #ccc; border-radius: 5px; }}
+            .info-panel {{ 
+                padding: 20px; 
+                background: #f8f9fa; 
+                border-bottom: 1px solid #ddd;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }}
+            .fotos-container {{ 
+                display: flex; 
+                flex-wrap: wrap; 
+                margin-top: 10px; 
+                gap: 10px;
+            }}
+            .foto {{ 
+                max-width: 150px; 
+                border: 1px solid #ccc; 
+                border-radius: 5px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }}
+            .header {{
+                background: #{'dc3545' if tipo.lower() == 'accidente' else 'ffc107' if tipo.lower() == 'obra' else '007bff'};
+                color: white;
+                padding: 15px;
+                margin: -20px -20px 20px -20px;
+                border-radius: 5px 5px 0 0;
+            }}
+            .google-maps-btn {{
+                display: block;
+                margin-top: 15px;
+                padding: 12px 20px;
+                background: #4285f4;
+                color: white;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                transition: background 0.3s;
+            }}
+            .google-maps-btn:hover {{
+                background: #3367d6;
+            }}
+            .leaflet-popup-content {{
+                max-width: 300px;
+            }}
+            .popup-content h3 {{
+                margin: 0 0 10px 0;
+                color: #{'dc3545' if tipo.lower() == 'accidente' else 'ffc107' if tipo.lower() == 'obra' else '007bff'};
+            }}
         </style>
     </head>
     <body>
-        <div id="map"></div>
         <div class="info-panel">
-            <h2>Incidencia {incidencia_id}</h2>
-            <p><strong>Carretera:</strong> {carretera}</p>
-            <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
-            <p><strong>Tipo:</strong> {tipo}</p>
-            <p><strong>Descripción:</strong> {descripcion}</p>
-            <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
-            {fotos_html}
+            <div class="header">
+                <h2>🚨 Incidencia {incidencia_id}</h2>
+            </div>
+            
+            <div class="info-content">
+                <p><strong>🛣️ Carretera:</strong> {carretera}</p>
+                <p><strong>📍 Punto Kilométrico:</strong> {kilometro}</p>
+                <p><strong>🔧 Tipo:</strong> <span style="color: {marker_color}; font-weight: bold;">{tipo.upper()}</span></p>
+                <p><strong>📅 Fecha:</strong> {fecha}</p>
+                <p><strong>📝 Descripción:</strong> {descripcion}</p>
+                <p><strong>🌐 Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+                
+                {fotos_html}
+                
+                <a href="https://www.google.com/maps?q={latitud},{longitud}" 
+                   target="_blank" class="google-maps-btn">
+                   📍 Abrir en Google Maps
+                </a>
+            </div>
         </div>
         
+        <div id="map"></div>
+        
         <script>
-            // Inicializar mapa
+            // Inicializar mapa centrado en las coordenadas
             var map = L.map('map').setView([{latitud}, {longitud}], 15);
             
             // Añadir capa de OpenStreetMap
             L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
-                attribution: '&copy; OpenStreetMap contributors'
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }}).addTo(map);
             
-            // Añadir marcador
-            var marker = L.marker([{latitud}, {longitud}]).addTo(map);
+            // Crear icono personalizado según el tipo
+            var iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-{marker_color}.png';
+            var icon = L.icon({{
+                iconUrl: iconUrl,
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            }});
             
-            // Contenido del popup
+            // Contenido detallado para el popup
             var popupContent = `
-                <h3>Incidencia {incidencia_id}</h3>
-                <p><strong>Carretera:</strong> {carretera}</p>
-                <p><strong>PK:</strong> {kilometro}</p>
-                <p><strong>Tipo:</strong> {tipo}</p>
-                <p><strong>Descripción:</strong> {descripcion}</p>
+                <div class="popup-content">
+                    <h3>🚨 Incidencia {incidencia_id}</h3>
+                    <p><strong>🛣️ Carretera:</strong> {carretera}</p>
+                    <p><strong>📍 PK:</strong> {kilometro}</p>
+                    <p><strong>🔧 Tipo:</strong> <span style="color: {marker_color}; font-weight: bold;">{tipo.upper()}</span></p>
+                    <p><strong>📅 Fecha:</strong> {fecha}</p>
+                    <p><strong>📝 Descripción:</strong> {descripcion}</p>
+                    <p><strong>🌐 Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+                </div>
             `;
             
-            // Añadir popup al marcador
-            marker.bindPopup(popupContent).openPopup();
+            // Añadir marcador con popup
+            var marker = L.marker([{latitud}, {longitud}], {{icon: icon}})
+                .addTo(map)
+                .bindPopup(popupContent)
+                .openPopup();
             
-            // Añadir enlace a Google Maps
-            var googleMapsUrl = "https://www.google.com/maps?q={latitud},{longitud}";
-            var link = document.createElement('a');
-            link.href = googleMapsUrl;
-            link.target = '_blank';
-            link.innerHTML = 'Abrir en Google Maps';
-            link.style.display = 'block';
-            link.style.marginTop = '10px';
-            link.style.padding = '10px';
-            link.style.backgroundColor = '#4285f4';
-            link.style.color = 'white';
-            link.style.textAlign = 'center';
-            link.style.textDecoration = 'none';
-            link.style.borderRadius = '5px';
+            // Añadir círculo para mejor visualización
+            L.circle([{latitud}, {longitud}], {{
+                color: '{marker_color}',
+                fillColor: '{marker_color}',
+                fillOpacity: 0.2,
+                radius: 50
+            }}).addTo(map);
             
-            document.querySelector('.info-panel').appendChild(link);
+            // Ajustar el mapa para que se vea el marcador y el popup
+            map.fitBounds(marker.getBounds(), {{ padding: [50, 50] }});
         </script>
     </body>
     </html>
@@ -586,9 +633,9 @@ def get_incidencias():
             if incidencia['kml_file']:
                 base_url = request.host_url.rstrip('/')
                 incidencia['kml_url'] = f"{base_url}/static/kml_files/{incidencia['kml_file']}"
-                # Enlaces para Google Maps
-                incidencia['google_maps_simple'] = f"https://www.google.com/maps?q={incidencia['latitud']},{incidencia['longitud']}"
-                incidencia['map_view'] = f"{base_url}/api/map-view/{incidencia['id']}"
+                # Enlaces para mapas
+                incidencia['google_maps_url'] = f"https://www.google.com/maps?q={incidencia['latitud']},{incidencia['longitud']}"
+                incidencia['map_view_url'] = f"{base_url}/api/map-view/{incidencia['id']}"
             incidencias.append(incidencia)
         
         cursor.close()
@@ -673,8 +720,6 @@ def crear_incidencia():
         kml_url = f"{base_url}/static/kml_files/{kml_filename}"
         download_url = f"{base_url}/api/download-kml/{incidencia_id}"
         map_view_url = f"{base_url}/api/map-view/{incidencia_id}"
-        
-        # URL de Google Maps
         google_maps_url = f"https://www.google.com/maps?q={latitud},{longitud}"
         
         return jsonify({
@@ -694,9 +739,9 @@ def crear_incidencia():
                 'fotos': fotos_urls
             },
             'instructions': {
-                'google_maps': f'Abra en Google Maps: {google_maps_url}',
-                'map_view': f'Vista de mapa personalizado: {map_view_url}',
-                'download': f'Descargar KML: {download_url}'
+                'map_view': f'Ver mapa interactivo: {map_view_url}',
+                'google_maps': f'Abrir en Google Maps: {google_maps_url}',
+                'download_kml': f'Descargar KML: {download_url}'
             }
         })
         
@@ -706,7 +751,7 @@ def crear_incidencia():
         if conn:
             release_db_connection(conn)
 
-# Nueva ruta para vista de mapa personalizado
+# Ruta para vista de mapa personalizado
 @app.route('/api/map-view/<incidencia_id>')
 def map_view(incidencia_id):
     try:
@@ -736,6 +781,7 @@ def map_view(incidencia_id):
             kilometro=incidencia[2],
             tipo=incidencia[5],
             descripcion=incidencia[7],
+            fecha=incidencia[6],
             fotos_urls=fotos_urls
         )
         
@@ -749,18 +795,13 @@ def serve_kml(filename):
     try:
         kml_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
-        # Verificar que el archivo existe
         if not os.path.exists(kml_path):
             return jsonify({'error': 'Archivo KML no encontrado'}), 404
         
-        # Forzar tipo MIME correcto
         response = send_file(kml_path)
         response.headers['Content-Type'] = 'application/vnd.google-earth.kml+xml'
         response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
         response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
         
         return response
         
@@ -786,11 +827,9 @@ def debug_carreteras():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Obtener todas las carreteras disponibles
         cursor.execute('SELECT DISTINCT carretera FROM puntos_carretera ORDER BY carretera')
         carreteras = [row[0] for row in cursor.fetchall()]
         
-        # Obtener conteo de puntos por carretera
         cursor.execute('''
             SELECT carretera, COUNT(*) as puntos 
             FROM puntos_carretera 
@@ -832,20 +871,10 @@ def debug_incidencia(incidencia_id):
         if not incidencia:
             return jsonify({'error': 'Incidencia no encontrada'}), 404
         
-        # Verificar si el archivo KML existe
-        kml_filename = f"incidencia_{incidencia_id}.kml"
-        kml_path = os.path.join(app.config['UPLOAD_FOLDER'], kml_filename)
-        kml_exists = os.path.exists(kml_path)
-        
-        kml_content = None
-        if kml_exists:
-            with open(kml_path, 'r', encoding='utf-8') as f:
-                kml_content = f.read()
-        
         base_url = request.host_url.rstrip('/')
-        kml_url = f"{base_url}/static/kml_files/{kml_filename}" if kml_exists else None
-        map_view_url = f"{base_url}/api/map-view/{incidencia_id}" if incidencia else None
-        google_maps_url = f"https://www.google.com/maps?q={incidencia[3]},{incidencia[4]}" if incidencia else None
+        kml_url = f"{base_url}/static/kml_files/incidencia_{incidencia_id}.kml"
+        map_view_url = f"{base_url}/api/map-view/{incidencia_id}"
+        google_maps_url = f"https://www.google.com/maps?q={incidencia[3]},{incidencia[4]}"
         
         return jsonify({
             'incidencia': {
@@ -860,16 +889,10 @@ def debug_incidencia(incidencia_id):
                 'kml_file': incidencia[8]
             },
             'fotos': [{'id': foto[0], 'ruta': foto[2]} for foto in fotos],
-            'kml': {
-                'exists': kml_exists,
-                'path': kml_path,
-                'content_preview': kml_content[:1000] + '...' if kml_content else None,
-                'url': kml_url
-            },
             'links': {
-                'google_maps': google_maps_url,
                 'map_view': map_view_url,
-                'kml_direct': kml_url
+                'google_maps': google_maps_url,
+                'kml_file': kml_url
             }
         })
         
@@ -878,17 +901,6 @@ def debug_incidencia(incidencia_id):
     finally:
         if conn:
             release_db_connection(conn)
-
-# Ruta para forzar la descarga de KML desde GitHub
-@app.route('/api/descargar-kml', methods=['POST'])
-def descargar_kml():
-    try:
-        if download_kml_files_from_github():
-            return jsonify({'success': True, 'message': 'Archivos KML descargados exitosamente'})
-        else:
-            return jsonify({'success': False, 'message': 'Error al descargar archivos KML'}), 500
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
 
 # Ruta para descargar KML individual
 @app.route('/api/download-kml/<incidencia_id>')
@@ -915,7 +927,6 @@ def reset_database():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Eliminar tablas existentes
         cursor.execute('DROP TABLE IF EXISTS fotos_incidencia CASCADE')
         cursor.execute('DROP TABLE IF EXISTS incidencias CASCADE')
         cursor.execute('DROP TABLE IF EXISTS puntos_carretera CASCADE')
@@ -923,7 +934,6 @@ def reset_database():
         conn.commit()
         cursor.close()
         
-        # Volver a crear las tablas
         setup_database()
         
         return jsonify({'success': True, 'message': 'Base de datos reiniciada exitosamente'})
