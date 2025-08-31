@@ -299,7 +299,7 @@ def obtener_coordenadas_interpoladas(carretera, punto_kilometrico_str):
             SELECT kilometro, kilometro_texto, latitud, longitud 
             FROM puntos_carretera 
             WHERE carretera = %s AND kilometro >= %s
-            ORDER BY kilometro ASC LIMIT 1
+            ORDER BY kilometro ASC LIMit 1
         ''', (carretera.upper(), metros_totales))
         punto_final = cursor.fetchone()
         
@@ -470,9 +470,9 @@ def get_incidencias():
             if incidencia['kml_file']:
                 base_url = request.host_url.rstrip('/')
                 incidencia['kml_url'] = f"{base_url}/static/kml_files/{incidencia['kml_file']}"
-                # URL directa para Google Earth
-                kml_encoded = urllib.parse.quote_plus(f"{base_url}/static/kml_files/{incidencia['kml_file']}")
-                incidencia['google_earth_direct'] = f"https://earth.google.com/web/data={kml_encoded}"
+                # ENLACES CORREGIDOS PARA GOOGLE EARTH
+                incidencia['google_earth_url'] = f"https://earth.google.com/web/@{incidencia['latitud']},{incidencia['longitud']},100a,35y,0h,0t,0r/data=CgYoIgA"
+                incidencia['google_earth_alternative'] = f"https://earth.google.com/web/search/{incidencia['latitud']}+{incidencia['longitud']}"
                 incidencia['google_maps_url'] = f"https://www.google.com/maps?q={incidencia['latitud']},{incidencia['longitud']}"
             incidencias.append(incidencia)
         
@@ -556,15 +556,21 @@ def crear_incidencia():
         # Generar URLs públicas
         base_url = request.host_url.rstrip('/')
         kml_url = f"{base_url}/static/kml_files/{kml_filename}"
-        kml_encoded = urllib.parse.quote_plus(kml_url)
-        google_earth_direct = f"https://earth.google.com/web/data={kml_encoded}"
+        
+        # ENLACE CORREGIDO PARA GOOGLE EARTH - FORMATO CORRECTO
+        google_earth_url = f"https://earth.google.com/web/@{latitud},{longitud},100a,35y,0h,0t,0r/data=CgYoIgA"
+        
+        # URL alternativa que funciona mejor
+        google_earth_alternative = f"https://earth.google.com/web/search/{latitud}+{longitud}"
+        
         google_maps_url = f"https://www.google.com/maps?q={latitud},{longitud}"
         download_url = f"{base_url}/api/download-kml/{incidencia_id}"
         
         return jsonify({
             'success': True,
             'kml_url': kml_url,
-            'google_earth_direct': google_earth_direct,
+            'google_earth_url': google_earth_url,
+            'google_earth_alternative': google_earth_alternative,
             'google_maps_url': google_maps_url,
             'download_url': download_url,
             'incidencia': {
@@ -578,8 +584,10 @@ def crear_incidencia():
                 'fotos': fotos_urls
             },
             'instructions': {
-                'google_earth': f'Copie y pegue este enlace en Google Earth: {google_earth_direct}',
-                'direct_open': f'O haga clic en: <a href="{google_earth_direct}" target="_blank">Abrir en Google Earth</a>'
+                'option1': 'Copie y pegue las coordenadas en Google Earth:',
+                'coordinates': f'{latitud}, {longitud}',
+                'option2': f'O use este enlace: {google_earth_url}',
+                'option3': f'O use el enlace alternativo: {google_earth_alternative}'
             }
         })
         
@@ -689,8 +697,11 @@ def debug_incidencia(incidencia_id):
         
         base_url = request.host_url.rstrip('/')
         kml_url = f"{base_url}/static/kml_files/{kml_filename}" if kml_exists else None
-        kml_encoded = urllib.parse.quote_plus(kml_url) if kml_url else None
-        google_earth_direct = f"https://earth.google.com/web/data={kml_encoded}" if kml_encoded else None
+        
+        # ENLACES CORREGIDOS
+        google_earth_url = f"https://earth.google.com/web/@{incidencia[3]},{incidencia[4]},100a,35y,0h,0t,0r/data=CgYoIgA" if incidencia else None
+        google_earth_alternative = f"https://earth.google.com/web/search/{incidencia[3]}+{incidencia[4]}" if incidencia else None
+        google_maps_url = f"https://www.google.com/maps?q={incidencia[3]},{incidencia[4]}" if incidencia else None
         
         return jsonify({
             'incidencia': {
@@ -709,8 +720,13 @@ def debug_incidencia(incidencia_id):
                 'exists': kml_exists,
                 'path': kml_path,
                 'content_preview': kml_content[:1000] + '...' if kml_content else None,
-                'url': kml_url,
-                'google_earth_direct': google_earth_direct
+                'url': kml_url
+            },
+            'links': {
+                'google_earth': google_earth_url,
+                'google_earth_alternative': google_earth_alternative,
+                'google_maps': google_maps_url,
+                'kml_direct': kml_url
             }
         })
         
