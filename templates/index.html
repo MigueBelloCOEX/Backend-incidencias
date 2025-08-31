@@ -3,342 +3,467 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Incidencias Vial</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Formulario de Incidencias Viales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
         body {
-            background-color: #f0f2f5;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
         }
-        .container {
-            max-width: 900px;
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            color: white;
+            padding: 1.5rem 0;
+            border-radius: 0 0 15px 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
+        
         .card {
-            margin-bottom: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+            border: none;
+            transition: transform 0.3s ease;
         }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
         .card-header {
-            border-radius: 12px 12px 0 0;
-            font-weight: bold;
+            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
         }
-        .kml-link {
-            word-break: break-all;
-            font-size: 0.9em;
-            color: #007bff;
-        }
-        .kml-link:hover {
-            text-decoration: underline;
-        }
-        .table-responsive {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        .table-hover tbody tr:hover {
-            background-color: #f1f1f1;
-        }
-        .btn-download {
-            margin-bottom: 15px;
-        }
-        .action-buttons {
+        
+        .section-title {
             display: flex;
-            gap: 5px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
         }
-        .action-btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
+        
+        .section-title i {
+            font-size: 1.4rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .required::after {
+            content: " *";
+            color: var(--accent-color);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+            border: none;
+            padding: 0.7rem 2rem;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2980b9, var(--secondary-color));
+            transform: translateY(-2px);
+        }
+        
+        .photo-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .photo-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-item .remove-photo {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(231, 76, 60, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .time-input-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .time-input {
+            flex: 1;
+        }
+        
+        .victim-section {
+            background-color: #fff8f8;
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        @media (max-width: 768px) {
+            .time-input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-5 text-primary">🚧 Enlaces incidencias COEX CA03</h1>
-
-        <div class="card">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">📝 Registrar Nueva Incidencia</h5>
-                <button id="btnDescargarKML" class="btn btn-sm btn-warning">🔄 Descargar KMLs</button>
-            </div>
-            <div class="card-body">
-                <div id="downloadStatus" class="alert alert-info" style="display: none;"></div>
-                
-                <form id="incidenciaForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">🆔 ID de Incidencia</label>
-                                <input type="text" class="form-control" id="id" required placeholder="Ej: INC-001">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">🛣️ Carretera</label>
-                                <input type="text" class="form-control" id="carretera" required placeholder="Ej: CA-35">
-                                <div class="form-text">Carreteras disponibles: CA-35, CA-36</div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">📍 Punto Kilométrico</label>
-                                <input type="text" class="form-control" id="kilometro" required placeholder="Ej: 0+100 o 1.5">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">⚠️ Tipo de Incidencia</label>
-                                <select class="form-select" id="tipo" required>
-                                    <option value="">Seleccionar tipo...</option>
-                                    <option value="accidente">🚗 Accidente</option>
-                                    <option value="obra">🚧 Obra</option>
-                                    <option value="clima">🌧️ Clima</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">📝 Descripción</label>
-                                <textarea class="form-control" id="descripcion" rows="3" placeholder="Descripción detallada de la incidencia..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-success w-100">
-                        💾 Guardar Incidencia
-                    </button>
-                </form>
-
-                <div id="loading" class="mt-4 text-center" style="display: none;">
-                    <div class="spinner-border text-info" role="status"></div>
-                    <p class="mt-2 text-info">Procesando incidencia...</p>
-                </div>
-
-                <div id="resultado" class="mt-4" style="display: none;">
-                    <div class="alert alert-success">
-                        <h6>✅ ¡Incidencia registrada exitosamente!</h6>
-                        <div class="mt-2">
-                            <strong>🔗 Enlaces generados:</strong>
-                            <div class="kml-link mt-2">
-                                <strong>🗺️ Vista de Mapa:</strong> 
-                                <a href="#" id="mapViewUrlLink" target="_blank"></a>
-                            </div>
-                            <div class="kml-link mt-2">
-                                <strong>🗺️ Google Maps:</strong> 
-                                <a href="#" id="mapsUrlLink" target="_blank"></a>
-                            </div>
-                            <div class="kml-link mt-2">
-                                <strong>📁 KML:</strong> 
-                                <a href="#" id="kmlUrlLink" target="_blank"></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="error" class="alert alert-danger mt-4" style="display: none;">
-                    <span id="errorMessage"></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">📋 Incidencias Registradas</h5>
-            </div>
-            <div class="card-body">
-                <div id="loadingIncidencias" class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="mt-2">Cargando incidencias...</p>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark sticky-top">
-                            <tr>
-                                <th>ID</th>
-                                <th>Carretera</th>
-                                <th>PK</th>
-                                <th>Tipo</th>
-                                <th>Coordenadas</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="incidenciasTable">
-                            <!-- Las incidencias se cargarán aquí -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div id="noIncidencias" class="text-center mt-3" style="display: none;">
-                    <p class="text-muted">No hay incidencias registradas todavía.</p>
-                </div>
-            </div>
+    <div class="header text-center">
+        <div class="container">
+            <h1><i class="fas fa-traffic-light"></i> Gestión de Incidencias Viales</h1>
+            <p class="lead">Sistema de registro y seguimiento de incidencias en carreteras</p>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="container">
+        <form id="incidenceForm">
+            <!-- Sección: Información básica -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle"></i> Información Básica
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">¿Es reseñable?</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="remarkable" id="remarkableYes" value="yes" required>
+                                <label class="form-check-label" for="remarkableYes">Sí</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="remarkable" id="remarkableNo" value="no">
+                                <label class="form-check-label" for="remarkableNo">No</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="highway" class="form-label required">Carretera</label>
+                            <select class="form-select" id="highway" required>
+                                <option value="">Seleccione una carretera</option>
+                                <option value="CA-35">CA-35</option>
+                                <option value="CA-36">CA-36</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="pk" class="form-label required">Punto Kilométrico (PK)</label>
+                            <input type="text" class="form-control" id="pk" placeholder="Ej: 5+470" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="direction" class="form-label required">Sentido</label>
+                            <select class="form-select" id="direction" required>
+                                <option value="">Seleccione sentido</option>
+                                <option value="creciente">Creciente</option>
+                                <option value="decreciente">Decreciente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="lane" class="form-label required">Calzada</label>
+                            <select class="form-select" id="lane" required>
+                                <option value="">Seleccione calzada</option>
+                                <option value="arcen-derecho">Arcén derecho</option>
+                                <option value="carril-derecho">Carril derecho</option>
+                                <option value="carril-central">Carril central</option>
+                                <option value="carril-izquierdo">Carril izquierdo</option>
+                                <option value="arcen-izquierdo">Arcén izquierdo</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label required">Ubicación</label>
+                        <textarea class="form-control" id="location" rows="2" placeholder="Describa la ubicación exacta de la incidencia" required></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Fotografías -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-camera"></i> Fotografías (Máximo 7)
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="photos" class="form-label">Seleccionar fotos</label>
+                        <input type="file" class="form-control" id="photos" accept="image/*" multiple>
+                        <div class="form-text">Puede seleccionar varias imágenes a la vez (Máx. 7)</div>
+                    </div>
+                    
+                    <div class="photo-preview" id="photoPreview">
+                        <div class="photo-item">
+                            <img src="https://via.placeholder.com/100x100/3498db/ffffff?text=Vista+1" alt="Vista previa">
+                            <button type="button" class="remove-photo"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="photo-item">
+                            <img src="https://via.placeholder.com/100x100/e74c3c/ffffff?text=Vista+2" alt="Vista previa">
+                            <button type="button" class="remove-photo"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Descripción de la incidencia -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-file-alt"></i> Descripción de la Incidencia
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="incidenceDescription" class="form-label required">Descripción detallada de la incidencia</label>
+                        <textarea class="form-control" id="incidenceDescription" rows="3" placeholder="Describa con detalle la incidencia ocurrida" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="damageDescription" class="form-label">Descripción de daños a infraestructuras</label>
+                        <textarea class="form-control" id="damageDescription" rows="3" placeholder="Describa los daños producidos en la infraestructura vial"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Trazabilidad horaria -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-clock"></i> Trazabilidad Horaria
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="detectionTime" class="form-label required">Hora de aviso o detección</label>
+                            <input type="datetime-local" class="form-control" id="detectionTime" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="reporter" class="form-label required">Reportado por</label>
+                            <select class="form-select" id="reporter" required>
+                                <option value="">Seleccione entidad</option>
+                                <option value="COEX CA03">COEX CA03</option>
+                                <option value="112">112</option>
+                                <option value="Guardia Civil">Guardia Civil</option>
+                                <option value="Policia Local Cadiz">Policía Local Cádiz</option>
+                                <option value="Policia Local Puerto Real">Policía Local Puerto Real</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="arrivalTime" class="form-label">Hora de llegada</label>
+                            <input type="datetime-local" class="form-control" id="arrivalTime">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="arrivalBy" class="form-label">Personal que llegó</label>
+                            <input type="text" class="form-control" id="arrivalBy" placeholder="Especificar personal">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="emergencyService" class="form-label">Aviso a servicio de emergencia</label>
+                        <textarea class="form-control" id="emergencyService" rows="2" placeholder="Detalles del aviso a servicios de emergencia"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Víctimas -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-first-aid"></i> Víctimas
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label required">¿Hay víctimas?</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="victims" id="victimsYes" value="yes">
+                            <label class="form-check-label" for="victimsYes">Sí</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="victims" id="victimsNo" value="no" checked>
+                            <label class="form-check-label" for="victimsNo">No</label>
+                        </div>
+                    </div>
+                    
+                    <div id="victimDetails" style="display: none;">
+                        <div class="victim-section">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="fatalities" class="form-label">Número de fallecidos</label>
+                                    <input type="number" class="form-control" id="fatalities" min="0" value="0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="injured" class="form-label">Número de heridos</label>
+                                    <input type="number" class="form-control" id="injured" min="0" value="0">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="victimDetailsText" class="form-label">Detalles de las víctimas</label>
+                                <textarea class="form-control" id="victimDetailsText" rows="3" placeholder="Proporcione detalles sobre las víctimas"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-5">
+                <button type="reset" class="btn btn-secondary me-md-2"><i class="fas fa-times"></i> Cancelar</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Enviar Incidencia</button>
+            </div>
+        </form>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>Sistema de Gestión de Incidencias Viales &copy; 2023</p>
+        </div>
+    </footer>
+
     <script>
-        const API_BASE_URL = 'https://backend-incidencia.onrender.com';
-        
         document.addEventListener('DOMContentLoaded', function() {
-            cargarIncidencias();
+            // Mostrar/ocultar detalles de víctimas
+            const victimsYes = document.getElementById('victimsYes');
+            const victimsNo = document.getElementById('victimsNo');
+            const victimDetails = document.getElementById('victimDetails');
             
-            // Event listener para el botón de descargar KML
-            document.getElementById('btnDescargarKML').addEventListener('click', descargarKMLDesdeGitHub);
-        });
-
-        async function descargarKMLDesdeGitHub() {
-            const downloadStatus = document.getElementById('downloadStatus');
-            const btnDescargar = document.getElementById('btnDescargarKML');
-            
-            btnDescargar.disabled = true;
-            btnDescargar.textContent = '⏳ Descargando...';
-            downloadStatus.style.display = 'block';
-            downloadStatus.textContent = 'Descargando archivos KML desde GitHub...';
-            downloadStatus.className = 'alert alert-info';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/descargar-kml`, {
-                    method: 'POST'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    downloadStatus.textContent = '✅ ' + result.message;
-                    downloadStatus.className = 'alert alert-success';
-                    
-                    // Recargar la página después de 2 segundos para aplicar los cambios
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    downloadStatus.textContent = '❌ ' + result.message;
-                    downloadStatus.className = 'alert alert-danger';
+            victimsYes.addEventListener('change', function() {
+                if (this.checked) {
+                    victimDetails.style.display = 'block';
                 }
-            } catch (error) {
-                downloadStatus.textContent = '❌ Error de conexión: ' + error.message;
-                downloadStatus.className = 'alert alert-danger';
-            } finally {
-                btnDescargar.disabled = false;
-                btnDescargar.textContent = '🔄 Descargar KMLs';
-            }
-        }
-
-        document.getElementById('incidenciaForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            document.getElementById('resultado').style.display = 'none';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
-
-            const formData = {
-                id: document.getElementById('id').value.trim(),
-                carretera: document.getElementById('carretera').value.trim(),
-                kilometro: document.getElementById('kilometro').value.trim(),
-                tipo: document.getElementById('tipo').value,
-                descripcion: document.getElementById('descripcion').value.trim()
-            };
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/incidencias`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                const result = await response.json();
-
-                document.getElementById('loading').style.display = 'none';
-
-                if (response.ok) {
-                    // Mostrar los enlaces en la interfaz
-                    document.getElementById('mapViewUrlLink').href = result.map_view_url;
-                    document.getElementById('mapViewUrlLink').textContent = 'Ver Mapa Interactivo';
-                    
-                    document.getElementById('mapsUrlLink').href = result.google_maps_url;
-                    document.getElementById('mapsUrlLink').textContent = 'Abrir en Google Maps';
-                    
-                    document.getElementById('kmlUrlLink').href = result.download_url;
-                    document.getElementById('kmlUrlLink').textContent = 'Descargar Archivo KML';
-                    
-                    document.getElementById('resultado').style.display = 'block';
-                    document.getElementById('incidenciaForm').reset();
-                    cargarIncidencias();
-                } else {
-                    document.getElementById('errorMessage').textContent = result.error || 'Ocurrió un error inesperado.';
-                    document.getElementById('error').style.display = 'block';
+            });
+            
+            victimsNo.addEventListener('change', function() {
+                if (this.checked) {
+                    victimDetails.style.display = 'none';
                 }
-            } catch (error) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('errorMessage').textContent = 'Error de conexión: ' + error.message;
-                document.getElementById('error').style.display = 'block';
-            }
-        });
-
-        async function cargarIncidencias() {
-            try {
-                const loadingIncidencias = document.getElementById('loadingIncidencias');
-                loadingIncidencias.style.display = 'block';
-
-                const response = await fetch(`${API_BASE_URL}/api/incidencias`);
-                const incidencias = await response.json();
-
-                const tableBody = document.getElementById('incidenciasTable');
-                const noIncidencias = document.getElementById('noIncidencias');
+            });
+            
+            // Validación del formulario
+            const form = document.getElementById('incidenceForm');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
                 
-                loadingIncidencias.style.display = 'none';
-                tableBody.innerHTML = '';
-
-                if (incidencias.length === 0) {
-                    noIncidencias.style.display = 'block';
+                // Validar que se haya seleccionado si es reseñable
+                const remarkable = document.querySelector('input[name="remarkable"]:checked');
+                if (!remarkable) {
+                    alert('Por favor, indique si la incidencia es reseñable');
                     return;
                 }
-
-                noIncidencias.style.display = 'none';
-
-                incidencias.forEach(incidencia => {
-                    const row = document.createElement('tr');
-                    let tipoIcon = '';
-                    if (incidencia.tipo === 'accidente') tipoIcon = '🚗';
-                    else if (incidencia.tipo === 'obra') tipoIcon = '🚧';
-                    else tipoIcon = '🌧️';
-
-                    row.innerHTML = `
-                        <td>${incidencia.id}</td>
-                        <td>${incidencia.carretera}</td>
-                        <td>${incidencia.kilometro}</td>
-                        <td>${tipoIcon} ${incidencia.tipo}</td>
-                        <td>${incidencia.latitud?.toFixed(6) || 'N/A'}, ${incidencia.longitud?.toFixed(6) || 'N/A'}</td>
-                        <td>${incidencia.fecha || 'N/A'}</td>
-                        <td>
-                            <div class="action-buttons">
-                                ${incidencia.map_view_url ? `
-                                    <a href="${incidencia.map_view_url}" target="_blank" class="btn btn-sm btn-success action-btn" title="Ver Mapa Interactivo">🗺️</a>
-                                ` : ''}
-                                ${incidencia.google_maps_url ? `
-                                    <a href="${incidencia.google_maps_url}" target="_blank" class="btn btn-sm btn-primary action-btn" title="Abrir en Google Maps">🌍</a>
-                                ` : ''}
-                                ${incidencia.kml_url ? `
-                                    <a href="${incidencia.kml_url}" target="_blank" class="btn btn-sm btn-secondary action-btn" title="Descargar KML">📁</a>
-                                ` : ''}
-                            </div>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
+                
+                // Aquí se pueden agregar más validaciones
+                
+                // Si todo está bien, mostrar mensaje de éxito
+                alert('Incidencia enviada correctamente');
+                form.reset();
+                victimDetails.style.display = 'none';
+            });
+            
+            // Simular previsualización de fotos (en un caso real se implementaría la subida real)
+            const photoInput = document.getElementById('photos');
+            const photoPreview = document.getElementById('photoPreview');
+            
+            photoInput.addEventListener('change', function() {
+                // Limpiar previsualización existente (excepto las dos de ejemplo)
+                while (photoPreview.children.length > 2) {
+                    photoPreview.removeChild(photoPreview.lastChild);
+                }
+                
+                // Limitar a 7 fotos máximo
+                if (photoPreview.children.length + this.files.length > 7) {
+                    alert('Solo puede subir un máximo de 7 fotos');
+                    this.value = '';
+                    return;
+                }
+                
+                // Añadir nuevas previsualizaciones
+                for (let i = 0; i < this.files.length; i++) {
+                    const file = this.files[i];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const div = document.createElement('div');
+                        div.className = 'photo-item';
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = 'Vista previa';
+                        
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'remove-photo';
+                        button.innerHTML = '<i class="fas fa-times"></i>';
+                        
+                        button.addEventListener('click', function() {
+                            photoPreview.removeChild(div);
+                        });
+                        
+                        div.appendChild(img);
+                        div.appendChild(button);
+                        photoPreview.appendChild(div);
+                    }
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Funcionalidad para eliminar fotos
+            const removeButtons = document.querySelectorAll('.remove-photo');
+            removeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.parentElement.remove();
                 });
-            } catch (error) {
-                console.error('Error cargando incidencias:', error);
-                document.getElementById('loadingIncidencias').style.display = 'none';
-                document.getElementById('noIncidencias').style.display = 'block';
-                document.getElementById('noIncidencias').innerHTML = `<p class="text-danger">Error cargando incidencias: ${error.message}</p>`;
-            }
-        }
-
-        // Función para formatear la fecha
-        function formatFecha(fechaStr) {
-            if (!fechaStr) return 'N/A';
-            try {
-                const fecha = new Date(fechaStr);
-                return fecha.toLocaleString('es-ES');
-            } catch (e) {
-                return fechaStr;
-            }
-        }
+            });
+        });
     </script>
 </body>
 </html>
