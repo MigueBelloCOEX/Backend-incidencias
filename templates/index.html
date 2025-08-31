@@ -450,7 +450,7 @@
                             
                             <div class="mb-3">
                                 <label for="emergencyService" class="form-label">Aviso a servicio de emergencia</label>
-                                <textarea class="form-control" id="emergencyService" name="aviso_emergencia" rows="2" placeholder="Detalles del aviso a servicios de emergencia"></textarea>
+                                <textarea class="form-control" id="emergenceyService" name="aviso_emergencia" rows="2" placeholder="Detalles del aviso a servicios de emergencia"></textarea>
                             </div>
                         </div>
                     </div>
@@ -503,7 +503,7 @@
                         <div class="card-body">
                             <div class="mb-3">
                                 <label for="incidenceId" class="form-label required">ID de Incidencia</label>
-                                <input type="text" class="form-control" id="incidenceId" name="id" placeholder="Ej: INC-001" required>
+                                <input type="text" class="form-control" id="incidenceId" name="id" placeholder="Se generará automáticamente" readonly required>
                             </div>
                             
                             <div class="mb-3">
@@ -599,31 +599,13 @@
         // URL base de la API (ajusta según tu entorno)
         const API_BASE_URL = window.location.origin;
         
-        // Datos de ejemplo para el historial (en una aplicación real, estos datos vendrían de una API)
-        const sampleIncidents = [
-            {
-                id: "INC-001",
-                carretera: "CA-35",
-                kilometro: "5+200",
-                tipo: "Accidente",
-                fecha: "2023-10-15 14:30",
-                map_view_url: "https://maps.google.com/?q=36.5281,-6.2881",
-                google_maps_url: "https://maps.google.com/?q=36.5281,-6.2881",
-                download_url: "/api/incidencias/INC-001/kml"
-            },
-            {
-                id: "INC-002",
-                carretera: "CA-36",
-                kilometro: "12+450",
-                tipo: "Obra",
-                fecha: "2023-10-16 09:15",
-                map_view_url: "https://maps.google.com/?q=36.5200,-6.2750",
-                google_maps_url: "https://maps.google.com/?q=36.5200,-6.2750",
-                download_url: "/api/incidencias/INC-002/kml"
-            }
-        ];
+        // Clave para almacenamiento local
+        const STORAGE_KEY = 'incidencias_viales';
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Generar ID automático al cargar la página
+            generateIncidenceId();
+            
             // Cargar incidencias al abrir la pestaña de historial
             document.getElementById('history-tab').addEventListener('click', function() {
                 loadIncidents();
@@ -632,6 +614,13 @@
             // Buscar incidencias
             document.getElementById('searchButton').addEventListener('click', function() {
                 loadIncidents();
+            });
+            
+            // Permitir búsqueda con la tecla Enter
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadIncidents();
+                }
             });
             
             // Mostrar/ocultar detalles de víctimas
@@ -720,65 +709,179 @@
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
                 
                 try {
+                    // Obtener datos del formulario
                     const formData = new FormData(form);
                     formData.append('remarkable', remarkable.value);
                     
-                    const response = await fetch(`${API_BASE_URL}/api/incidencias`, {
-                        method: 'POST',
-                        body: formData
-                    });
+                    // Convertir FormData a objeto para guardar en localStorage
+                    const incidenceData = {
+                        id: document.getElementById('incidenceId').value,
+                        carretera: formData.get('carretera'),
+                        kilometro: formData.get('kilometro'),
+                        sentido: formData.get('sentido'),
+                        calzada: formData.get('calzada'),
+                        ubicacion: formData.get('ubicacion'),
+                        descripcion: formData.get('descripcion'),
+                        danos_infraestructura: formData.get('danos_infraestructura'),
+                        hora_deteccion: formData.get('hora_deteccion'),
+                        reportado_por: formData.get('reportado_por'),
+                        hora_llegada: formData.get('hora_llegada'),
+                        personal_llegada: formData.get('personal_llegada'),
+                        aviso_emergencia: formData.get('aviso_emergencia'),
+                        victimas: formData.get('victimas'),
+                        fallecidos: formData.get('fallecidos'),
+                        heridos: formData.get('heridos'),
+                        detalles_victimas: formData.get('detalles_victimas'),
+                        tipo: formData.get('tipo'),
+                        fecha_creacion: new Date().toISOString()
+                    };
                     
-                    const result = await response.json();
+                    // Guardar en localStorage
+                    saveIncidence(incidenceData);
                     
-                    if (response.ok) {
-                        showAlert('Incidencia enviada correctamente', 'success');
-                        
-                        if (result.map_view_url || result.google_maps_url || result.download_url) {
-                            displayGeneratedLinks(result);
-                        }
-                        
-                        form.reset();
-                        victimDetails.style.display = 'none';
-                        photoPreview.innerHTML = '';
-                    } else {
-                        showAlert(result.error || 'Error al enviar la incidencia', 'danger');
+                    // Simular respuesta de la API
+                    const result = {
+                        map_view_url: `https://maps.google.com/?q=${Math.random().toFixed(4)},${Math.random().toFixed(4)}`,
+                        google_maps_url: `https://maps.google.com/?q=${Math.random().toFixed(4)},${Math.random().toFixed(4)}`,
+                        download_url: `/api/incidencias/${incidenceData.id}/kml`
+                    };
+                    
+                    showAlert('Incidencia guardada correctamente', 'success');
+                    
+                    if (result.map_view_url || result.google_maps_url || result.download_url) {
+                        displayGeneratedLinks(result);
                     }
+                    
+                    form.reset();
+                    victimDetails.style.display = 'none';
+                    photoPreview.innerHTML = '';
+                    
+                    // Generar nuevo ID para la próxima incidencia
+                    generateIncidenceId();
+                    
                 } catch (error) {
                     console.error('Error:', error);
-                    showAlert('Error de conexión: ' + error.message, 'danger');
+                    showAlert('Error al guardar la incidencia: ' + error.message, 'danger');
                 } finally {
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 }
             });
             
+            // Función para generar ID de incidencia automático (yy.mm.dd - número)
+            function generateIncidenceId() {
+                const now = new Date();
+                const year = now.getFullYear().toString().slice(-2);
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                
+                // Obtener el número secuencial para el día
+                const incidenciasHoy = getIncidenciasDelDia(now);
+                const nextNumber = incidenciasHoy.length + 1;
+                
+                const incidenceId = `${year}.${month}.${day} - ${nextNumber}`;
+                document.getElementById('incidenceId').value = incidenceId;
+            }
+            
+            // Función para obtener incidencias del día específico
+            function getIncidenciasDelDia(fecha) {
+                const incidencias = getIncidencias();
+                return incidencias.filter(incidencia => {
+                    const fechaInc = new Date(incidencia.fecha_creacion);
+                    return fechaInc.getDate() === fecha.getDate() &&
+                           fechaInc.getMonth() === fecha.getMonth() &&
+                           fechaInc.getFullYear() === fecha.getFullYear();
+                });
+            }
+            
+            // Función para guardar incidencia en localStorage
+            function saveIncidence(incidenceData) {
+                const incidencias = getIncidencias();
+                incidencias.push(incidenceData);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(incidencias));
+            }
+            
+            // Función para obtener todas las incidencias
+            function getIncidencias() {
+                const incidencias = localStorage.getItem(STORAGE_KEY);
+                return incidencias ? JSON.parse(incidencias) : [];
+            }
+            
             // Función para cargar incidencias en el historial
             function loadIncidents() {
                 const searchTerm = document.getElementById('searchInput').value.toLowerCase();
                 const dateFilter = document.getElementById('dateFilter').value;
+                const now = new Date();
                 
-                // En una aplicación real, aquí harías una llamada a la API
-                // Por ahora usamos datos de ejemplo
+                const incidencias = getIncidencias();
                 const tbody = document.getElementById('incidenceTableBody');
                 tbody.innerHTML = '';
                 
-                if (sampleIncidents.length === 0) {
+                if (incidencias.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay incidencias registradas</td></tr>';
                     return;
                 }
                 
-                sampleIncidents.forEach(incident => {
+                // Filtrar incidencias según criterios de búsqueda
+                let filteredIncidencias = incidencias;
+                
+                if (searchTerm) {
+                    filteredIncidencias = incidencias.filter(incidencia => 
+                        incidencia.id.toLowerCase().includes(searchTerm) ||
+                        incidencia.carretera.toLowerCase().includes(searchTerm) ||
+                        incidencia.descripcion.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                if (dateFilter !== 'all') {
+                    filteredIncidencias = filteredIncidencias.filter(incidencia => {
+                        const fechaInc = new Date(incidencia.fecha_creacion);
+                        
+                        switch(dateFilter) {
+                            case 'today':
+                                return fechaInc.getDate() === now.getDate() &&
+                                       fechaInc.getMonth() === now.getMonth() &&
+                                       fechaInc.getFullYear() === now.getFullYear();
+                            case 'week':
+                                const startOfWeek = new Date(now);
+                                startOfWeek.setDate(now.getDate() - now.getDay());
+                                startOfWeek.setHours(0, 0, 0, 0);
+                                return fechaInc >= startOfWeek;
+                            case 'month':
+                                return fechaInc.getMonth() === now.getMonth() &&
+                                       fechaInc.getFullYear() === now.getFullYear();
+                            default:
+                                return true;
+                        }
+                    });
+                }
+                
+                // Ordenar por fecha (más recientes primero)
+                filteredIncidencias.sort((a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion));
+                
+                if (filteredIncidencias.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron incidencias</td></tr>';
+                    return;
+                }
+                
+                filteredIncidencias.forEach(incidencia => {
+                    const fecha = new Date(incidencia.fecha_creacion);
+                    const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
+                    
                     const row = document.createElement('tr');
                     
                     row.innerHTML = `
-                        <td>${incident.id}</td>
-                        <td>${incident.carretera}</td>
-                        <td>${incident.kilometro}</td>
-                        <td>${incident.tipo}</td>
-                        <td>${incident.fecha}</td>
+                        <td>${incidencia.id}</td>
+                        <td>${incidencia.carretera}</td>
+                        <td>${incidencia.kilometro}</td>
+                        <td>${incidencia.tipo}</td>
+                        <td>${fechaFormateada}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary view-incident" data-id="${incident.id}">
+                            <button class="btn btn-sm btn-outline-primary view-incident" data-id="${incidencia.id}">
                                 <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-incident" data-id="${incidencia.id}">
+                                <i class="fas fa-trash"></i> Eliminar
                             </button>
                         </td>
                     `;
@@ -793,14 +896,25 @@
                         viewIncident(incidentId);
                     });
                 });
+                
+                // Añadir event listeners a los botones de eliminar
+                document.querySelectorAll('.delete-incident').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const incidentId = this.getAttribute('data-id');
+                        deleteIncident(incidentId);
+                    });
+                });
             }
             
             // Función para ver los detalles de una incidencia
             function viewIncident(incidentId) {
-                // En una aplicación real, aquí harías una llamada a la API para obtener los detalles
-                const incident = sampleIncidents.find(i => i.id === incidentId);
+                const incidencias = getIncidencias();
+                const incident = incidencias.find(i => i.id === incidentId);
                 
                 if (incident) {
+                    const fecha = new Date(incident.fecha_creacion);
+                    const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
+                    
                     const modalHtml = `
                         <div class="modal fade" id="incidentModal" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-lg">
@@ -820,39 +934,67 @@
                                         </div>
                                         <div class="row mb-3">
                                             <div class="col-md-6">
+                                                <strong>Sentido:</strong> ${incident.sentido}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Calzada:</strong> ${incident.calzada}
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
                                                 <strong>Tipo:</strong> ${incident.tipo}
                                             </div>
                                             <div class="col-md-6">
-                                                <strong>Fecha:</strong> ${incident.fecha}
+                                                <strong>Fecha:</strong> ${fechaFormateada}
                                             </div>
                                         </div>
-                                        <div class="links-container">
-                                            <h6>Enlaces:</h6>
-                                            ${incident.map_view_url ? `
-                                                <div class="link-item">
-                                                    <div class="link-text">Mapa Interactivo: ${incident.map_view_url}</div>
-                                                    <button class="copy-btn" data-url="${incident.map_view_url}">
-                                                        <i class="fas fa-copy"></i> Copiar
-                                                    </button>
+                                        <div class="mb-3">
+                                            <strong>Ubicación:</strong> ${incident.ubicacion}
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong>Descripción:</strong> ${incident.descripcion}
+                                        </div>
+                                        ${incident.danos_infraestructura ? `
+                                        <div class="mb-3">
+                                            <strong>Daños a infraestructura:</strong> ${incident.danos_infraestructura}
+                                        </div>
+                                        ` : ''}
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Reportado por:</strong> ${incident.reportado_por}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Hora de detección:</strong> ${incident.hora_deteccion}
+                                            </div>
+                                        </div>
+                                        ${incident.hora_llegada ? `
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Hora de llegada:</strong> ${incident.hora_llegada}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Personal que llegó:</strong> ${incident.personal_llegada || 'No especificado'}
+                                            </div>
+                                        </div>
+                                        ` : ''}
+                                        ${incident.victimas === 'yes' ? `
+                                        <div class="victim-section">
+                                            <h6>Información de Víctimas</h6>
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <strong>Fallecidos:</strong> ${incident.fallecidos || 0}
                                                 </div>
-                                            ` : ''}
-                                            ${incident.google_maps_url ? `
-                                                <div class="link-item">
-                                                    <div class="link-text">Google Maps: ${incident.google_maps_url}</div>
-                                                    <button class="copy-btn" data-url="${incident.google_maps_url}">
-                                                        <i class="fas fa-copy"></i> Copiar
-                                                    </button>
+                                                <div class="col-md-6">
+                                                    <strong>Heridos:</strong> ${incident.heridos || 0}
                                                 </div>
-                                            ` : ''}
-                                            ${incident.download_url ? `
-                                                <div class="link-item">
-                                                    <div class="link-text">Descarga KML: ${incident.download_url}</div>
-                                                    <button class="copy-btn" data-url="${incident.download_url}">
-                                                        <i class="fas fa-copy"></i> Copiar
-                                                    </button>
-                                                </div>
+                                            </div>
+                                            ${incident.detalles_victimas ? `
+                                            <div class="mb-3">
+                                                <strong>Detalles:</strong> ${incident.detalles_victimas}
+                                            </div>
                                             ` : ''}
                                         </div>
+                                        ` : ''}
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -869,20 +1011,22 @@
                     const modal = new bootstrap.Modal(document.getElementById('incidentModal'));
                     modal.show();
                     
-                    // Añadir event listeners para los botones de copiar
-                    document.getElementById('incidentModal').addEventListener('shown.bs.modal', function() {
-                        document.querySelectorAll('#incidentModal .copy-btn').forEach(button => {
-                            button.addEventListener('click', function() {
-                                const url = this.getAttribute('data-url');
-                                copyToClipboard(url, 'Enlace');
-                            });
-                        });
-                    });
-                    
                     // Eliminar el modal cuando se cierre
                     document.getElementById('incidentModal').addEventListener('hidden.bs.modal', function() {
                         this.remove();
                     });
+                }
+            }
+            
+            // Función para eliminar una incidencia
+            function deleteIncident(incidentId) {
+                if (confirm(`¿Está seguro de que desea eliminar la incidencia ${incidentId}?`)) {
+                    const incidencias = getIncidencias();
+                    const nuevasIncidencias = incidencias.filter(i => i.id !== incidentId);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevasIncidencias));
+                    
+                    showAlert('Incidencia eliminada correctamente', 'success');
+                    loadIncidents(); // Recargar la tabla
                 }
             }
             
