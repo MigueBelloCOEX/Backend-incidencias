@@ -353,100 +353,72 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
         if fotos_urls is None:
             fotos_urls = []
         
-        # Determinar el icono según el tipo de incidencia
+        # Determinar el color según el tipo de incidencia
         if tipo.lower() == "accidente":
-            icon_url = "https://earth.google.com/earth/document/icon?color=ff0000&id=2000&scale=4"  # Rojo
+            color = "ff0000"  # Rojo
         elif tipo.lower() == "obra":
-            icon_url = "https://earth.google.com/earth/document/icon?color=ffff00&id=2000&scale=4"  # Amarillo
+            color = "ffff00"  # Amarillo
         else:
-            icon_url = "https://earth.google.com/earth/document/icon?color=0000ff&id=2000&scale=4"  # Azul
+            color = "0000ff"  # Azul
 
         # Crear contenido HTML para las fotos
         fotos_html = ""
         if fotos_urls:
-            fotos_html = "<h4>Fotos:</h4><div>"
+            fotos_html = "<h4>Fotos:</h4><div style='display: flex; flex-wrap: wrap;'>"
             for foto_url in fotos_urls:
-                fotos_html += f'<img src="{foto_url}" width="200" style="margin:5px;"><br>'
+                fotos_html += f'<img src="{foto_url}" width="150" style="margin: 5px; border: 1px solid #ccc;">'
             fotos_html += "</div>"
         else:
             fotos_html = "<p>No hay fotos disponibles</p>"
 
-        # Crear KML con la estructura compatible
+        # Crear KML SIMPLIFICADO y compatible
         kml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
-<Document>
-  <Style id="normalStyle">
-    <IconStyle>
-      <scale>1.2</scale>
-      <Icon>
-        <href>{icon_url}</href>
-      </Icon>
-      <hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
-    </IconStyle>
-    <LabelStyle>
-    </LabelStyle>
-    <BalloonStyle>
-      <text><![CDATA[
-        <h3>Incidencia Vial $[name]</h3>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Incidencia {incidencia_id}</name>
+    <Style id="iconStyle">
+      <IconStyle>
+        <color>ff{color}</color>
+        <scale>1.3</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/pushpin/red-pushpin.png</href>
+        </Icon>
+        <hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+      </IconStyle>
+      <BalloonStyle>
+        <text><![CDATA[
+          <h2 style="color: #{color}; margin-bottom: 10px;">Incidencia Vial {incidencia_id}</h2>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 5px; border-bottom: 1px solid #eee;"><strong>Carretera:</strong></td><td style="padding: 5px; border-bottom: 1px solid #eee;">{carretera}</td></tr>
+            <tr><td style="padding: 5px; border-bottom: 1px solid #eee;"><strong>Punto Kilométrico:</strong></td><td style="padding: 5px; border-bottom: 1px solid #eee;">{kilometro}</td></tr>
+            <tr><td style="padding: 5px; border-bottom: 1px solid #eee;"><strong>Tipo:</strong></td><td style="padding: 5px; border-bottom: 1px solid #eee;">{tipo}</td></tr>
+            <tr><td style="padding: 5px; border-bottom: 1px solid #eee;"><strong>Fecha:</strong></td><td style="padding: 5px; border-bottom: 1px solid #eee;">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</td></tr>
+            <tr><td style="padding: 5px; border-bottom: 1px solid #eee;"><strong>Coordenadas:</strong></td><td style="padding: 5px; border-bottom: 1px solid #eee;">{latitud:.6f}, {longitud:.6f}</td></tr>
+          </table>
+          <h3 style="margin-top: 15px;">Descripción:</h3>
+          <p style="background: #f9f9f9; padding: 10px; border-radius: 5px;">{descripcion}</p>
+          {fotos_html}
+        ]]></text>
+      </BalloonStyle>
+    </Style>
+    <Placemark>
+      <name>Incidencia {incidencia_id}</name>
+      <description><![CDATA[
+        <h2 style="color: #{color};">Incidencia Vial {incidencia_id}</h2>
         <p><strong>Carretera:</strong> {carretera}</p>
         <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
         <p><strong>Tipo:</strong> {tipo}</p>
         <p><strong>Fecha:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-        <p><strong>Descripción:</strong> {descripcion}</p>
         <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
+        <p><strong>Descripción:</strong> {descripcion}</p>
         {fotos_html}
-      ]]></text>
-    </BalloonStyle>
-  </Style>
-  <Style id="highlightStyle">
-    <IconStyle>
-      <scale>1.4</scale>
-      <Icon>
-        <href>{icon_url}</href>
-      </Icon>
-      <hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
-    </IconStyle>
-    <LabelStyle>
-    </LabelStyle>
-  </Style>
-  <StyleMap id="incidenciaStyle">
-    <Pair>
-      <key>normal</key>
-      <styleUrl>#normalStyle</styleUrl>
-    </Pair>
-    <Pair>
-      <key>highlight</key>
-      <styleUrl>#highlightStyle</styleUrl>
-    </Pair>
-  </StyleMap>
-  <Placemark>
-    <name>Incidencia {incidencia_id}</name>
-    <description><![CDATA[
-      <h3>Incidencia Vial {incidencia_id}</h3>
-      <p><strong>Carretera:</strong> {carretera}</p>
-      <p><strong>Punto Kilométrico:</strong> {kilometro}</p>
-      <p><strong>Tipo:</strong> {tipo}</p>
-      <p><strong>Fecha:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-      <p><strong>Descripción:</strong> {descripcion}</p>
-      <p><strong>Coordenadas:</strong> {latitud:.6f}, {longitud:.6f}</p>
-      {fotos_html}
-    ]]></description>
-    <LookAt>
-      <longitude>{longitud}</longitude>
-      <latitude>{latitud}</latitude>
-      <altitude>1000</altitude>
-      <heading>0</heading>
-      <tilt>0</tilt>
-      <range>1000</range>
-      <gx:fovy>30</gx:fovy>
-      <altitudeMode>relativeToGround</altitudeMode>
-    </LookAt>
-    <styleUrl>#incidenciaStyle</styleUrl>
-    <Point>
-      <coordinates>{longitud},{latitud},0</coordinates>
-    </Point>
-  </Placemark>
-</Document>
+      ]]></description>
+      <styleUrl>#iconStyle</styleUrl>
+      <Point>
+        <coordinates>{longitud},{latitud},0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
 </kml>"""
         
         # Guardar archivo KML
@@ -457,10 +429,17 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
             f.write(kml_content)
         
         print(f"✅ KML creado: {kml_path}")
+        
+        # Verificar que el archivo se creó correctamente
+        if os.path.exists(kml_path):
+            with open(kml_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                print(f"📄 Contenido del KML (primeras 500 chars): {content[:500]}...")
+        
         return kml_filename
         
     except Exception as e:
-        print(f"Error creando KML: {e}")
+        print(f"❌ Error creando KML: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -609,12 +588,26 @@ def crear_incidencia():
 @app.route('/static/kml_files/<filename>')
 def serve_kml(filename):
     try:
-        response = send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        kml_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Verificar que el archivo existe
+        if not os.path.exists(kml_path):
+            return jsonify({'error': 'Archivo KML no encontrado'}), 404
+        
+        # Leer el contenido para verificar que es válido
+        with open(kml_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            print(f"📤 Sirviendo KML: {filename}, tamaño: {len(content)} caracteres")
+        
+        response = send_file(kml_path)
         response.headers['Content-Type'] = 'application/vnd.google-earth.kml+xml'
         response.headers['Content-Disposition'] = f'inline; filename={filename}'
+        response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    except FileNotFoundError:
-        return jsonify({'error': 'Archivo KML no encontrado'}), 404
+        
+    except Exception as e:
+        print(f"❌ Error sirviendo KML: {e}")
+        return jsonify({'error': f'Error al servir el archivo: {str(e)}'}), 500
 
 @app.route('/static/fotos/<filename>')
 def serve_foto(filename):
@@ -662,22 +655,60 @@ def debug_carreteras():
         if conn:
             release_db_connection(conn)
 
-@app.route('/api/debug/kml/<incidencia_id>')
-def debug_kml(incidencia_id):
+@app.route('/api/debug/incidencia/<incidencia_id>')
+def debug_incidencia(incidencia_id):
+    conn = None
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM incidencias WHERE id = %s', (incidencia_id,))
+        incidencia = cursor.fetchone()
+        
+        cursor.execute('SELECT * FROM fotos_incidencia WHERE incidencia_id = %s', (incidencia_id,))
+        fotos = cursor.fetchall()
+        
+        cursor.close()
+        
+        if not incidencia:
+            return jsonify({'error': 'Incidencia no encontrada'}), 404
+        
+        # Verificar si el archivo KML existe
         kml_filename = f"incidencia_{incidencia_id}.kml"
         kml_path = os.path.join(app.config['UPLOAD_FOLDER'], kml_filename)
+        kml_exists = os.path.exists(kml_path)
         
-        if os.path.exists(kml_path):
+        kml_content = None
+        if kml_exists:
             with open(kml_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            return f"<pre>{content}</pre>"
-        else:
-            return jsonify({'error': 'KML no encontrado'}), 404
-            
+                kml_content = f.read()
+        
+        return jsonify({
+            'incidencia': {
+                'id': incidencia[0],
+                'carretera': incidencia[1],
+                'kilometro': incidencia[2],
+                'latitud': incidencia[3],
+                'longitud': incidencia[4],
+                'tipo': incidencia[5],
+                'fecha': incidencia[6],
+                'descripcion': incidencia[7],
+                'kml_file': incidencia[8]
+            },
+            'fotos': [{'id': foto[0], 'ruta': foto[2]} for foto in fotos],
+            'kml': {
+                'exists': kml_exists,
+                'path': kml_path,
+                'content_preview': kml_content[:1000] + '...' if kml_content else None,
+                'url': f"{request.host_url.rstrip('/')}/static/kml_files/{kml_filename}" if kml_exists else None
+            }
+        })
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
 
 # Ruta para forzar la descarga de KML desde GitHub
 @app.route('/api/descargar-kml', methods=['POST'])
@@ -728,3 +759,4 @@ except Exception as e:
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
+
