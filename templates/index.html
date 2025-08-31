@@ -166,6 +166,47 @@
             max-width: 400px;
         }
         
+        .links-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .link-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .link-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 10px;
+        }
+        
+        .copy-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .copy-btn:hover {
+            background-color: #2980b9;
+        }
+        
         @media (max-width: 768px) {
             .time-input-group {
                 flex-direction: column;
@@ -176,6 +217,21 @@
                 left: 20px;
                 right: 20px;
                 max-width: none;
+            }
+            
+            .link-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .link-text {
+                margin-right: 0;
+                margin-bottom: 10px;
+                width: 100%;
+            }
+            
+            .copy-btn {
+                align-self: flex-end;
             }
         }
     </style>
@@ -400,6 +456,14 @@
                 <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Enviar Incidencia</button>
             </div>
         </form>
+        
+        <!-- Contenedor para mostrar enlaces después del envío -->
+        <div id="linksContainer" class="links-container" style="display: none;">
+            <h4><i class="fas fa-link"></i> Enlaces Generados</h4>
+            <div id="generatedLinks">
+                <!-- Los enlaces se insertarán aquí dinámicamente -->
+            </div>
+        </div>
     </div>
 
     <footer>
@@ -521,21 +585,15 @@
                     
                     if (response.ok) {
                         showAlert('Incidencia enviada correctamente', 'success');
-                        form.reset();
-                        victimDetails.style.display = 'none';
-                        photoPreview.innerHTML = '';
                         
                         // Mostrar enlaces generados
                         if (result.instructions) {
-                            setTimeout(() => {
-                                showAlert(`
-                                    <strong>Enlaces generados:</strong><br>
-                                    - <a href="${result.map_view_url}" target="_blank">Ver Mapa Interactivo</a><br>
-                                    - <a href="${result.google_maps_url}" target="_blank">Abrir en Google Maps</a><br>
-                                    - <a href="${result.download_url}" target="_blank">Descargar KML</a>
-                                `, 'info', 10000);
-                            }, 1000);
+                            displayGeneratedLinks(result);
                         }
+                        
+                        form.reset();
+                        victimDetails.style.display = 'none';
+                        photoPreview.innerHTML = '';
                     } else {
                         showAlert(result.error || 'Error al enviar la incidencia', 'danger');
                     }
@@ -569,6 +627,73 @@
                         }
                     }, duration);
                 }
+            }
+            
+            // Función para mostrar los enlaces generados
+            function displayGeneratedLinks(result) {
+                const linksContainer = document.getElementById('linksContainer');
+                const generatedLinks = document.getElementById('generatedLinks');
+                
+                // Limpiar enlaces anteriores
+                generatedLinks.innerHTML = '';
+                
+                // Crear elementos para cada enlace
+                const links = [
+                    { 
+                        name: 'Ver Mapa Interactivo', 
+                        url: result.map_view_url,
+                        icon: 'map-marked-alt'
+                    },
+                    { 
+                        name: 'Abrir en Google Maps', 
+                        url: result.google_maps_url,
+                        icon: 'map'
+                    },
+                    { 
+                        name: 'Descargar KML', 
+                        url: result.download_url,
+                        icon: 'download'
+                    }
+                ];
+                
+                links.forEach(link => {
+                    if (link.url) {
+                        const linkItem = document.createElement('div');
+                        linkItem.className = 'link-item';
+                        
+                        const linkText = document.createElement('div');
+                        linkText.className = 'link-text';
+                        linkText.title = link.url;
+                        linkText.innerHTML = `<i class="fas fa-${link.icon} me-2"></i> ${link.name}: ${link.url}`;
+                        
+                        const copyButton = document.createElement('button');
+                        copyButton.className = 'copy-btn';
+                        copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                        copyButton.addEventListener('click', () => {
+                            copyToClipboard(link.url, link.name);
+                        });
+                        
+                        linkItem.appendChild(linkText);
+                        linkItem.appendChild(copyButton);
+                        generatedLinks.appendChild(linkItem);
+                    }
+                });
+                
+                // Mostrar el contenedor de enlaces
+                linksContainer.style.display = 'block';
+                
+                // Desplazarse suavemente hacia los enlaces
+                linksContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Función para copiar texto al portapapeles
+            function copyToClipboard(text, linkName) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showAlert(`Enlace de ${linkName} copiado al portapapeles`, 'success', 3000);
+                }).catch(err => {
+                    console.error('Error al copiar: ', err);
+                    showAlert('Error al copiar el enlace', 'danger', 3000);
+                });
             }
         });
     </script>
