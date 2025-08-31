@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* [Mantén todos los estilos iguales] */
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
@@ -207,6 +208,17 @@
             background-color: #2980b9;
         }
         
+        .debug-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        }
+        
         @media (max-width: 768px) {
             .time-input-group {
                 flex-direction: column;
@@ -248,208 +260,9 @@
 
     <div class="container">
         <form id="incidenceForm" enctype="multipart/form-data">
-            <!-- Sección: Información básica -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-info-circle"></i> Información Básica
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label required">¿Es reseñable?</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="remarkable" id="remarkableYes" value="yes" required>
-                                <label class="form-check-label" for="remarkableYes">Sí</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="remarkable" id="remarkableNo" value="no">
-                                <label class="form-check-label" for="remarkableNo">No</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="highway" class="form-label required">Carretera</label>
-                            <select class="form-select" id="highway" name="carretera" required>
-                                <option value="">Seleccione una carretera</option>
-                                <option value="CA-35">CA-35</option>
-                                <option value="CA-36">CA-36</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="pk" class="form-label required">Punto Kilométrico (PK)</label>
-                            <input type="text" class="form-control" id="pk" name="kilometro" placeholder="Ej: 5+470" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="direction" class="form-label required">Sentido</label>
-                            <select class="form-select" id="direction" name="sentido" required>
-                                <option value="">Seleccione sentido</option>
-                                <option value="creciente">Creciente</option>
-                                <option value="decreciente">Decreciente</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="lane" class="form-label required">Calzada</label>
-                            <select class="form-select" id="lane" name="calzada" required>
-                                <option value="">Seleccione calzada</option>
-                                <option value="arcen-derecho">Arcén derecho</option>
-                                <option value="carril-derecho">Carril derecho</option>
-                                <option value="carril-central">Carril central</option>
-                                <option value="carril-izquierdo">Carril izquierdo</option>
-                                <option value="arcen-izquierdo">Arcén izquierdo</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="location" class="form-label required">Ubicación</label>
-                        <textarea class="form-control" id="location" name="ubicacion" rows="2" placeholder="Describa la ubicación exacta de la incidencia" required></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección: Fotografías -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-camera"></i> Fotografías (Máximo 7)
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="photos" class="form-label">Seleccionar fotos</label>
-                        <input type="file" class="form-control" id="photos" name="fotos" accept="image/*" multiple>
-                        <div class="form-text">Puede seleccionar varias imágenes a la vez (Máx. 7)</div>
-                    </div>
-                    
-                    <div class="photo-preview" id="photoPreview">
-                        <!-- Las previsualizaciones de fotos se agregarán aquí -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección: Descripción de la incidencia -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-file-alt"></i> Descripción de la Incidencia
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="incidenceDescription" class="form-label required">Descripción detallada de la incidencia</label>
-                        <textarea class="form-control" id="incidenceDescription" name="descripcion" rows="3" placeholder="Describa con detalle la incidencia ocurrida" required></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="damageDescription" class="form-label">Descripción de daños a infraestructuras</label>
-                        <textarea class="form-control" id="damageDescription" name="danos_infraestructura" rows="3" placeholder="Describa los daños producidos en la infraestructura vial"></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección: Trazabilidad horaria -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-clock"></i> Trazabilidad Horaria
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="detectionTime" class="form-label required">Hora de aviso o detección</label>
-                            <input type="datetime-local" class="form-control" id="detectionTime" name="hora_deteccion" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="reporter" class="form-label required">Reportado por</label>
-                            <select class="form-select" id="reporter" name="reportado_por" required>
-                                <option value="">Seleccione entidad</option>
-                                <option value="COEX CA03">COEX CA03</option>
-                                <option value="112">112</option>
-                                <option value="Guardia Civil">Guardia Civil</option>
-                                <option value="Policia Local Cadiz">Policía Local Cádiz</option>
-                                <option value="Policia Local Puerto Real">Policía Local Puerto Real</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="arrivalTime" class="form-label">Hora de llegada</label>
-                            <input type="datetime-local" class="form-control" id="arrivalTime" name="hora_llegada">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="arrivalBy" class="form-label">Personal que llegó</label>
-                            <input type="text" class="form-control" id="arrivalBy" name="personal_llegada" placeholder="Especificar personal">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="emergencyService" class="form-label">Aviso a servicio de emergencia</label>
-                        <textarea class="form-control" id="emergencyService" name="aviso_emergencia" rows="2" placeholder="Detalles del aviso a servicios de emergencia"></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección: Víctimas -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-first-aid"></i> Víctimas
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label required">¿Hay víctimas?</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="victimas" id="victimsYes" value="yes">
-                            <label class="form-check-label" for="victimsYes">Sí</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="victimas" id="victimsNo" value="no" checked>
-                            <label class="form-check-label" for="victimsNo">No</label>
-                        </div>
-                    </div>
-                    
-                    <div id="victimDetails" style="display: none;">
-                        <div class="victim-section">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="fatalities" class="form-label">Número de fallecidos</label>
-                                    <input type="number" class="form-control" id="fatalities" name="fallecidos" min="0" value="0">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="injured" class="form-label">Número de heridos</label>
-                                    <input type="number" class="form-control" id="injured" name="heridos" min="0" value="0">
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="victimDetailsText" class="form-label">Detalles de las víctimas</label>
-                                <textarea class="form-control" id="victimDetailsText" name="detalles_victimas" rows="3" placeholder="Proporcione detalles sobre las víctimas"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sección: ID de Incidencia -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-id-card"></i> Identificación de Incidencia
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="incidenceId" class="form-label required">ID de Incidencia</label>
-                        <input type="text" class="form-control" id="incidenceId" name="id" placeholder="Ej: INC-001" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="incidenceType" class="form-label required">Tipo de Incidencia</label>
-                        <select class="form-select" id="incidenceType" name="tipo" required>
-                            <option value="">Seleccionar tipo...</option>
-                            <option value="accidente">🚗 Accidente</option>
-                            <option value="obra">🚧 Obra</option>
-                            <option value="clima">🌧️ Clima</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
+            <!-- [Mantén todo el formulario igual] -->
+            <!-- ... resto del formulario ... -->
+            
             <!-- Botones de acción -->
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-5">
                 <button type="reset" class="btn btn-secondary me-md-2"><i class="fas fa-times"></i> Cancelar</button>
@@ -464,6 +277,12 @@
                 <!-- Los enlaces se insertarán aquí dinámicamente -->
             </div>
         </div>
+        
+        <!-- Información de depuración -->
+        <div id="debugInfo" class="debug-info">
+            <h5><i class="fas fa-bug"></i> Información de Depuración</h5>
+            <pre id="debugContent"></pre>
+        </div>
     </div>
 
     <footer>
@@ -477,77 +296,8 @@
         const API_BASE_URL = window.location.origin; // Usa la misma URL del frontend
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Mostrar/ocultar detalles de víctimas
-            const victimsYes = document.getElementById('victimsYes');
-            const victimsNo = document.getElementById('victimsNo');
-            const victimDetails = document.getElementById('victimDetails');
-            
-            victimsYes.addEventListener('change', function() {
-                if (this.checked) {
-                    victimDetails.style.display = 'block';
-                }
-            });
-            
-            victimsNo.addEventListener('change', function() {
-                if (this.checked) {
-                    victimDetails.style.display = 'none';
-                }
-            });
-            
-            // Manejo de previsualización de fotos
-            const photoInput = document.getElementById('photos');
-            const photoPreview = document.getElementById('photoPreview');
-            
-            photoInput.addEventListener('change', function() {
-                // Limpiar previsualización existente
-                photoPreview.innerHTML = '';
-                
-                // Limitar a 7 fotos máximo
-                if (this.files.length > 7) {
-                    showAlert('Solo puede subir un máximo de 7 fotos', 'warning');
-                    this.value = '';
-                    return;
-                }
-                
-                // Añadir nuevas previsualizaciones
-                for (let i = 0; i < this.files.length; i++) {
-                    const file = this.files[i];
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        const div = document.createElement('div');
-                        div.className = 'photo-item';
-                        
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.alt = 'Vista previa';
-                        
-                        const button = document.createElement('button');
-                        button.type = 'button';
-                        button.className = 'remove-photo';
-                        button.innerHTML = '<i class="fas fa-times"></i>';
-                        
-                        button.addEventListener('click', function() {
-                            photoPreview.removeChild(div);
-                            // También eliminar el archivo del input
-                            const filesArray = Array.from(photoInput.files);
-                            const index = filesArray.indexOf(file);
-                            if (index !== -1) {
-                                filesArray.splice(index, 1);
-                                const dt = new DataTransfer();
-                                filesArray.forEach(f => dt.items.add(f));
-                                photoInput.files = dt.files;
-                            }
-                        });
-                        
-                        div.appendChild(img);
-                        div.appendChild(button);
-                        photoPreview.appendChild(div);
-                    }
-                    
-                    reader.readAsDataURL(file);
-                }
-            });
+            // [Mantén todo el código JavaScript anterior igual]
+            // ... código anterior ...
             
             // Envío del formulario
             const form = document.getElementById('incidenceForm');
@@ -583,13 +333,15 @@
                     
                     const result = await response.json();
                     
+                    // Mostrar información de depuración
+                    document.getElementById('debugContent').textContent = JSON.stringify(result, null, 2);
+                    document.getElementById('debugInfo').style.display = 'block';
+                    
                     if (response.ok) {
                         showAlert('Incidencia enviada correctamente', 'success');
                         
-                        // Mostrar enlaces generados
-                        if (result.instructions) {
-                            displayGeneratedLinks(result);
-                        }
+                        // Mostrar enlaces generados (ahora más flexible)
+                        displayGeneratedLinks(result);
                         
                         form.reset();
                         victimDetails.style.display = 'none';
@@ -607,29 +359,7 @@
                 }
             });
             
-            // Función para mostrar alertas
-            function showAlert(message, type = 'info', duration = 5000) {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-                alertDiv.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                
-                document.getElementById('alertContainer').appendChild(alertDiv);
-                
-                // Auto cerrar después de un tiempo
-                if (duration > 0) {
-                    setTimeout(() => {
-                        if (alertDiv.parentNode) {
-                            alertDiv.classList.remove('show');
-                            setTimeout(() => alertDiv.remove(), 150);
-                        }
-                    }, duration);
-                }
-            }
-            
-            // Función para mostrar los enlaces generados
+            // Función para mostrar los enlaces generados (versión mejorada)
             function displayGeneratedLinks(result) {
                 const linksContainer = document.getElementById('linksContainer');
                 const generatedLinks = document.getElementById('generatedLinks');
@@ -637,64 +367,66 @@
                 // Limpiar enlaces anteriores
                 generatedLinks.innerHTML = '';
                 
-                // Crear elementos para cada enlace
-                const links = [
-                    { 
-                        name: 'Ver Mapa Interactivo', 
-                        url: result.map_view_url,
-                        icon: 'map-marked-alt'
-                    },
-                    { 
-                        name: 'Abrir en Google Maps', 
-                        url: result.google_maps_url,
-                        icon: 'map'
-                    },
-                    { 
-                        name: 'Descargar KML', 
-                        url: result.download_url,
-                        icon: 'download'
-                    }
+                // Buscar enlaces en la respuesta (más flexible)
+                const possibleLinkKeys = [
+                    'map_view_url', 'google_maps_url', 'download_url',
+                    'mapUrl', 'googleMapsUrl', 'kmlUrl', 'url',
+                    'enlace_mapa', 'enlace_google_maps', 'enlace_descarga'
                 ];
                 
-                links.forEach(link => {
-                    if (link.url) {
+                let linksFound = false;
+                
+                // Buscar enlaces en la respuesta
+                possibleLinkKeys.forEach(key => {
+                    if (result[key]) {
+                        linksFound = true;
+                        const linkName = key.replace(/_/g, ' ').replace(/url/gi, '').trim();
+                        const formattedName = linkName.charAt(0).toUpperCase() + linkName.slice(1);
+                        
                         const linkItem = document.createElement('div');
                         linkItem.className = 'link-item';
                         
                         const linkText = document.createElement('div');
                         linkText.className = 'link-text';
-                        linkText.title = link.url;
-                        linkText.innerHTML = `<i class="fas fa-${link.icon} me-2"></i> ${link.name}: ${link.url}`;
+                        linkText.title = result[key];
+                        linkText.innerHTML = `<i class="fas fa-link me-2"></i> ${formattedName}: ${result[key]}`;
                         
                         const copyButton = document.createElement('button');
                         copyButton.className = 'copy-btn';
                         copyButton.innerHTML = '<i class="fas fa-copy"></i> Copiar';
                         copyButton.addEventListener('click', () => {
-                            copyToClipboard(link.url, link.name);
+                            copyToClipboard(result[key], formattedName);
                         });
+                        
+                        const openButton = document.createElement('a');
+                        openButton.className = 'copy-btn ms-2';
+                        openButton.innerHTML = '<i class="fas fa-external-link-alt"></i> Abrir';
+                        openButton.href = result[key];
+                        openButton.target = '_blank';
+                        openButton.style.backgroundColor = '#28a745';
                         
                         linkItem.appendChild(linkText);
                         linkItem.appendChild(copyButton);
+                        linkItem.appendChild(openButton);
                         generatedLinks.appendChild(linkItem);
                     }
                 });
                 
-                // Mostrar el contenedor de enlaces
-                linksContainer.style.display = 'block';
-                
-                // Desplazarse suavemente hacia los enlaces
-                linksContainer.scrollIntoView({ behavior: 'smooth' });
+                // Si no se encontraron enlaces con las claves esperadas, mostrar toda la respuesta
+                if (!linksFound) {
+                    showAlert('No se encontraron enlaces en la respuesta. Verifique la información de depuración.', 'warning');
+                    linksContainer.style.display = 'none';
+                } else {
+                    // Mostrar el contenedor de enlaces
+                    linksContainer.style.display = 'block';
+                    
+                    // Desplazarse suavemente hacia los enlaces
+                    linksContainer.scrollIntoView({ behavior: 'smooth' });
+                }
             }
             
-            // Función para copiar texto al portapapeles
-            function copyToClipboard(text, linkName) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showAlert(`Enlace de ${linkName} copiado al portapapeles`, 'success', 3000);
-                }).catch(err => {
-                    console.error('Error al copiar: ', err);
-                    showAlert('Error al copiar el enlace', 'danger', 3000);
-                });
-            }
+            // [Mantén las otras funciones igual]
+            // ... resto de funciones ...
         });
     </script>
     
