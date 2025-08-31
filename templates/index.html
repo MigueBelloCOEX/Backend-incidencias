@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Incidencias COEX CA03</title>
+    <title>Formulario de Incidencias Viales</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -292,8 +292,8 @@
 
     <div class="header text-center">
         <div class="container">
-            <h1><i class="fas fa-traffic-light"></i> Generador de enlace incidencias COEX CA03</h1>
-            <p class="lead">Sistema de registro y seguimiento de incidencias en carreteras CA-35 y CA-36</p>
+            <h1><i class="fas fa-traffic-light"></i> Gestión de Incidencias Viales</h1>
+            <p class="lead">Sistema de registro y seguimiento de incidencias en carreteras</p>
         </div>
     </div>
 
@@ -511,8 +511,8 @@
                                 <select class="form-select" id="incidenceType" name="tipo" required>
                                     <option value="">Seleccionar tipo...</option>
                                     <option value="accidente">🚗 Accidente</option>
-                                    <option value="obra">🚧 Incidente</option>
-                                    <option value="clima">🚧 Obra</option>
+                                    <option value="obra">🚧 Obra</option>
+                                    <option value="clima">🌧️ Clima</option>
                                 </select>
                             </div>
                         </div>
@@ -599,8 +599,8 @@
         // URL base de la API (ajusta según tu entorno)
         const API_BASE_URL = window.location.origin;
         
-        // Datos de ejemplo para el historial (en una aplicación real, estos datos vendrían de una API)
-        const sampleIncidents = [
+        // Almacenamiento de incidencias (en una aplicación real, estos datos vendrían de una API)
+        let incidents = JSON.parse(localStorage.getItem('incidents')) || [
             {
                 id: "INC-001",
                 carretera: "CA-35",
@@ -623,6 +623,11 @@
             }
         ];
         
+        // Guardar datos iniciales en localStorage
+        if (!localStorage.getItem('incidents')) {
+            localStorage.setItem('incidents', JSON.stringify(incidents));
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Cargar incidencias al abrir la pestaña de historial
             document.getElementById('history-tab').addEventListener('click', function() {
@@ -632,6 +637,13 @@
             // Buscar incidencias
             document.getElementById('searchButton').addEventListener('click', function() {
                 loadIncidents();
+            });
+            
+            // Permitir búsqueda con la tecla Enter
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadIncidents();
+                }
             });
             
             // Mostrar/ocultar detalles de víctimas
@@ -720,33 +732,55 @@
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
                 
                 try {
+                    // En una aplicación real, aquí enviarías los datos al servidor
+                    // Simulamos una respuesta exitosa del servidor
+                    
+                    // Obtener valores del formulario
                     const formData = new FormData(form);
-                    formData.append('remarkable', remarkable.value);
+                    const incidenceId = document.getElementById('incidenceId').value;
+                    const carretera = document.getElementById('highway').value;
+                    const kilometro = document.getElementById('pk').value;
+                    const tipo = document.getElementById('incidenceType').value;
                     
-                    const response = await fetch(`${API_BASE_URL}/api/incidencias`, {
-                        method: 'POST',
-                        body: formData
-                    });
+                    // Crear objeto de incidencia
+                    const newIncident = {
+                        id: incidenceId,
+                        carretera: carretera,
+                        kilometro: kilometro,
+                        tipo: tipo,
+                        fecha: new Date().toLocaleString('es-ES'),
+                        map_view_url: `https://maps.google.com/?q=incidencia-${incidenceId}`,
+                        google_maps_url: `https://maps.google.com/?q=incidencia-${incidenceId}`,
+                        download_url: `/api/incidencias/${incidenceId}/kml`
+                    };
                     
-                    const result = await response.json();
+                    // Añadir a la lista de incidencias
+                    incidents.push(newIncident);
                     
-                    if (response.ok) {
+                    // Guardar en localStorage
+                    localStorage.setItem('incidents', JSON.stringify(incidents));
+                    
+                    // Simular respuesta del servidor
+                    setTimeout(() => {
                         showAlert('Incidencia enviada correctamente', 'success');
                         
-                        if (result.map_view_url || result.google_maps_url || result.download_url) {
-                            displayGeneratedLinks(result);
-                        }
+                        // Mostrar enlaces generados
+                        displayGeneratedLinks(newIncident);
+                        
+                        // Actualizar el listado de incidencias
+                        loadIncidents();
                         
                         form.reset();
                         victimDetails.style.display = 'none';
                         photoPreview.innerHTML = '';
-                    } else {
-                        showAlert(result.error || 'Error al enviar la incidencia', 'danger');
-                    }
+                        
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalText;
+                    }, 1000);
+                    
                 } catch (error) {
                     console.error('Error:', error);
                     showAlert('Error de conexión: ' + error.message, 'danger');
-                } finally {
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 }
@@ -757,17 +791,57 @@
                 const searchTerm = document.getElementById('searchInput').value.toLowerCase();
                 const dateFilter = document.getElementById('dateFilter').value;
                 
-                // En una aplicación real, aquí harías una llamada a la API
-                // Por ahora usamos datos de ejemplo
+                // Obtener incidencias de localStorage
+                incidents = JSON.parse(localStorage.getItem('incidents')) || [];
+                
                 const tbody = document.getElementById('incidenceTableBody');
                 tbody.innerHTML = '';
                 
-                if (sampleIncidents.length === 0) {
+                if (incidents.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay incidencias registradas</td></tr>';
                     return;
                 }
                 
-                sampleIncidents.forEach(incident => {
+                // Filtrar incidencias según término de búsqueda
+                let filteredIncidents = incidents;
+                if (searchTerm) {
+                    filteredIncidents = incidents.filter(incident => 
+                        incident.id.toLowerCase().includes(searchTerm) ||
+                        incident.carretera.toLowerCase().includes(searchTerm) ||
+                        incident.tipo.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                // Aplicar filtro de fecha si es necesario
+                if (dateFilter !== 'all') {
+                    const now = new Date();
+                    filteredIncidents = filteredIncidents.filter(incident => {
+                        const incidentDate = new Date(incident.fecha);
+                        
+                        switch(dateFilter) {
+                            case 'today':
+                                return incidentDate.toDateString() === now.toDateString();
+                            case 'week':
+                                const weekStart = new Date(now);
+                                weekStart.setDate(now.getDate() - now.getDay());
+                                weekStart.setHours(0, 0, 0, 0);
+                                return incidentDate >= weekStart;
+                            case 'month':
+                                return incidentDate.getMonth() === now.getMonth() && 
+                                       incidentDate.getFullYear() === now.getFullYear();
+                            default:
+                                return true;
+                        }
+                    });
+                }
+                
+                if (filteredIncidents.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron incidencias</td></tr>';
+                    return;
+                }
+                
+                // Mostrar incidencias en la tabla
+                filteredIncidents.forEach(incident => {
                     const row = document.createElement('tr');
                     
                     row.innerHTML = `
@@ -797,8 +871,9 @@
             
             // Función para ver los detalles de una incidencia
             function viewIncident(incidentId) {
-                // En una aplicación real, aquí harías una llamada a la API para obtener los detalles
-                const incident = sampleIncidents.find(i => i.id === incidentId);
+                // Obtener incidencias de localStorage
+                const incidents = JSON.parse(localStorage.getItem('incidents')) || [];
+                const incident = incidents.find(i => i.id === incidentId);
                 
                 if (incident) {
                     const modalHtml = `
@@ -988,4 +1063,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
