@@ -141,6 +141,14 @@
             margin-top: 15px;
         }
         
+        .emergency-services {
+            background-color: #f0f9ff;
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
         footer {
             background-color: var(--primary-color);
             color: white;
@@ -150,15 +158,31 @@
             border-radius: 15px 15px 0 0;
         }
         
+        .alert-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 400px;
+        }
+        
         @media (max-width: 768px) {
             .time-input-group {
                 flex-direction: column;
                 gap: 10px;
             }
+            
+            .alert-container {
+                left: 20px;
+                right: 20px;
+                max-width: none;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="alert-container" id="alertContainer"></div>
+
     <div class="header text-center">
         <div class="container">
             <h1><i class="fas fa-traffic-light"></i> Gestión de Incidencias Viales</h1>
@@ -167,7 +191,7 @@
     </div>
 
     <div class="container">
-        <form id="incidenceForm">
+        <form id="incidenceForm" enctype="multipart/form-data">
             <!-- Sección: Información básica -->
             <div class="card">
                 <div class="card-header">
@@ -188,7 +212,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="highway" class="form-label required">Carretera</label>
-                            <select class="form-select" id="highway" required>
+                            <select class="form-select" id="highway" name="carretera" required>
                                 <option value="">Seleccione una carretera</option>
                                 <option value="CA-35">CA-35</option>
                                 <option value="CA-36">CA-36</option>
@@ -199,11 +223,11 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="pk" class="form-label required">Punto Kilométrico (PK)</label>
-                            <input type="text" class="form-control" id="pk" placeholder="Ej: 5+470" required>
+                            <input type="text" class="form-control" id="pk" name="kilometro" placeholder="Ej: 5+470" required>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="direction" class="form-label required">Sentido</label>
-                            <select class="form-select" id="direction" required>
+                            <select class="form-select" id="direction" name="sentido" required>
                                 <option value="">Seleccione sentido</option>
                                 <option value="creciente">Creciente</option>
                                 <option value="decreciente">Decreciente</option>
@@ -211,7 +235,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="lane" class="form-label required">Calzada</label>
-                            <select class="form-select" id="lane" required>
+                            <select class="form-select" id="lane" name="calzada" required>
                                 <option value="">Seleccione calzada</option>
                                 <option value="arcen-derecho">Arcén derecho</option>
                                 <option value="carril-derecho">Carril derecho</option>
@@ -224,7 +248,7 @@
                     
                     <div class="mb-3">
                         <label for="location" class="form-label required">Ubicación</label>
-                        <textarea class="form-control" id="location" rows="2" placeholder="Describa la ubicación exacta de la incidencia" required></textarea>
+                        <textarea class="form-control" id="location" name="ubicacion" rows="2" placeholder="Describa la ubicación exacta de la incidencia" required></textarea>
                     </div>
                 </div>
             </div>
@@ -237,19 +261,12 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="photos" class="form-label">Seleccionar fotos</label>
-                        <input type="file" class="form-control" id="photos" accept="image/*" multiple>
+                        <input type="file" class="form-control" id="photos" name="fotos" accept="image/*" multiple>
                         <div class="form-text">Puede seleccionar varias imágenes a la vez (Máx. 7)</div>
                     </div>
                     
                     <div class="photo-preview" id="photoPreview">
-                        <div class="photo-item">
-                            <img src="https://via.placeholder.com/100x100/3498db/ffffff?text=Vista+1" alt="Vista previa">
-                            <button type="button" class="remove-photo"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div class="photo-item">
-                            <img src="https://via.placeholder.com/100x100/e74c3c/ffffff?text=Vista+2" alt="Vista previa">
-                            <button type="button" class="remove-photo"><i class="fas fa-times"></i></button>
-                        </div>
+                        <!-- Las previsualizaciones de fotos se agregarán aquí -->
                     </div>
                 </div>
             </div>
@@ -262,12 +279,12 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="incidenceDescription" class="form-label required">Descripción detallada de la incidencia</label>
-                        <textarea class="form-control" id="incidenceDescription" rows="3" placeholder="Describa con detalle la incidencia ocurrida" required></textarea>
+                        <textarea class="form-control" id="incidenceDescription" name="descripcion" rows="3" placeholder="Describa con detalle la incidencia ocurrida" required></textarea>
                     </div>
                     
                     <div class="mb-3">
                         <label for="damageDescription" class="form-label">Descripción de daños a infraestructuras</label>
-                        <textarea class="form-control" id="damageDescription" rows="3" placeholder="Describa los daños producidos en la infraestructura vial"></textarea>
+                        <textarea class="form-control" id="damageDescription" name="danos_infraestructura" rows="3" placeholder="Describa los daños producidos en la infraestructura vial"></textarea>
                     </div>
                 </div>
             </div>
@@ -281,11 +298,11 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="detectionTime" class="form-label required">Hora de aviso o detección</label>
-                            <input type="datetime-local" class="form-control" id="detectionTime" required>
+                            <input type="datetime-local" class="form-control" id="detectionTime" name="hora_deteccion" required>
                         </div>
                         <div class="col-md-6">
                             <label for="reporter" class="form-label required">Reportado por</label>
-                            <select class="form-select" id="reporter" required>
+                            <select class="form-select" id="reporter" name="reportado_por" required>
                                 <option value="">Seleccione entidad</option>
                                 <option value="COEX CA03">COEX CA03</option>
                                 <option value="112">112</option>
@@ -299,17 +316,17 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="arrivalTime" class="form-label">Hora de llegada</label>
-                            <input type="datetime-local" class="form-control" id="arrivalTime">
+                            <input type="datetime-local" class="form-control" id="arrivalTime" name="hora_llegada">
                         </div>
                         <div class="col-md-6">
                             <label for="arrivalBy" class="form-label">Personal que llegó</label>
-                            <input type="text" class="form-control" id="arrivalBy" placeholder="Especificar personal">
+                            <input type="text" class="form-control" id="arrivalBy" name="personal_llegada" placeholder="Especificar personal">
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="emergencyService" class="form-label">Aviso a servicio de emergencia</label>
-                        <textarea class="form-control" id="emergencyService" rows="2" placeholder="Detalles del aviso a servicios de emergencia"></textarea>
+                        <textarea class="form-control" id="emergencyService" name="aviso_emergencia" rows="2" placeholder="Detalles del aviso a servicios de emergencia"></textarea>
                     </div>
                 </div>
             </div>
@@ -323,11 +340,11 @@
                     <div class="mb-3">
                         <label class="form-label required">¿Hay víctimas?</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="victims" id="victimsYes" value="yes">
+                            <input class="form-check-input" type="radio" name="victimas" id="victimsYes" value="yes">
                             <label class="form-check-label" for="victimsYes">Sí</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="victims" id="victimsNo" value="no" checked>
+                            <input class="form-check-input" type="radio" name="victimas" id="victimsNo" value="no" checked>
                             <label class="form-check-label" for="victimsNo">No</label>
                         </div>
                     </div>
@@ -337,19 +354,42 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="fatalities" class="form-label">Número de fallecidos</label>
-                                    <input type="number" class="form-control" id="fatalities" min="0" value="0">
+                                    <input type="number" class="form-control" id="fatalities" name="fallecidos" min="0" value="0">
                                 </div>
                                 <div class="col-md-6">
                                     <label for="injured" class="form-label">Número de heridos</label>
-                                    <input type="number" class="form-control" id="injured" min="0" value="0">
+                                    <input type="number" class="form-control" id="injured" name="heridos" min="0" value="0">
                                 </div>
                             </div>
                             
                             <div class="mb-3">
                                 <label for="victimDetailsText" class="form-label">Detalles de las víctimas</label>
-                                <textarea class="form-control" id="victimDetailsText" rows="3" placeholder="Proporcione detalles sobre las víctimas"></textarea>
+                                <textarea class="form-control" id="victimDetailsText" name="detalles_victimas" rows="3" placeholder="Proporcione detalles sobre las víctimas"></textarea>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: ID de Incidencia -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-id-card"></i> Identificación de Incidencia
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="incidenceId" class="form-label required">ID de Incidencia</label>
+                        <input type="text" class="form-control" id="incidenceId" name="id" placeholder="Ej: INC-001" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="incidenceType" class="form-label required">Tipo de Incidencia</label>
+                        <select class="form-select" id="incidenceType" name="tipo" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="accidente">🚗 Accidente</option>
+                            <option value="obra">🚧 Obra</option>
+                            <option value="clima">🌧️ Clima</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -369,6 +409,9 @@
     </footer>
 
     <script>
+        // URL base de la API (ajusta según tu entorno)
+        const API_BASE_URL = window.location.origin; // Usa la misma URL del frontend
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Mostrar/ocultar detalles de víctimas
             const victimsYes = document.getElementById('victimsYes');
@@ -387,40 +430,17 @@
                 }
             });
             
-            // Validación del formulario
-            const form = document.getElementById('incidenceForm');
-            
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Validar que se haya seleccionado si es reseñable
-                const remarkable = document.querySelector('input[name="remarkable"]:checked');
-                if (!remarkable) {
-                    alert('Por favor, indique si la incidencia es reseñable');
-                    return;
-                }
-                
-                // Aquí se pueden agregar más validaciones
-                
-                // Si todo está bien, mostrar mensaje de éxito
-                alert('Incidencia enviada correctamente');
-                form.reset();
-                victimDetails.style.display = 'none';
-            });
-            
-            // Simular previsualización de fotos (en un caso real se implementaría la subida real)
+            // Manejo de previsualización de fotos
             const photoInput = document.getElementById('photos');
             const photoPreview = document.getElementById('photoPreview');
             
             photoInput.addEventListener('change', function() {
-                // Limpiar previsualización existente (excepto las dos de ejemplo)
-                while (photoPreview.children.length > 2) {
-                    photoPreview.removeChild(photoPreview.lastChild);
-                }
+                // Limpiar previsualización existente
+                photoPreview.innerHTML = '';
                 
                 // Limitar a 7 fotos máximo
-                if (photoPreview.children.length + this.files.length > 7) {
-                    alert('Solo puede subir un máximo de 7 fotos');
+                if (this.files.length > 7) {
+                    showAlert('Solo puede subir un máximo de 7 fotos', 'warning');
                     this.value = '';
                     return;
                 }
@@ -445,6 +465,15 @@
                         
                         button.addEventListener('click', function() {
                             photoPreview.removeChild(div);
+                            // También eliminar el archivo del input
+                            const filesArray = Array.from(photoInput.files);
+                            const index = filesArray.indexOf(file);
+                            if (index !== -1) {
+                                filesArray.splice(index, 1);
+                                const dt = new DataTransfer();
+                                filesArray.forEach(f => dt.items.add(f));
+                                photoInput.files = dt.files;
+                            }
                         });
                         
                         div.appendChild(img);
@@ -456,14 +485,95 @@
                 }
             });
             
-            // Funcionalidad para eliminar fotos
-            const removeButtons = document.querySelectorAll('.remove-photo');
-            removeButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    this.parentElement.remove();
-                });
+            // Envío del formulario
+            const form = document.getElementById('incidenceForm');
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validar que se haya seleccionado si es reseñable
+                const remarkable = document.querySelector('input[name="remarkable"]:checked');
+                if (!remarkable) {
+                    showAlert('Por favor, indique si la incidencia es reseñable', 'warning');
+                    return;
+                }
+                
+                // Mostrar indicador de carga
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalText = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+                
+                try {
+                    // Crear FormData para enviar archivos
+                    const formData = new FormData(form);
+                    
+                    // Añadir campo "remarkable" al FormData
+                    formData.append('remarkable', remarkable.value);
+                    
+                    // Enviar datos al backend
+                    const response = await fetch(`${API_BASE_URL}/api/incidencias`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showAlert('Incidencia enviada correctamente', 'success');
+                        form.reset();
+                        victimDetails.style.display = 'none';
+                        photoPreview.innerHTML = '';
+                        
+                        // Mostrar enlaces generados
+                        if (result.instructions) {
+                            setTimeout(() => {
+                                showAlert(`
+                                    <strong>Enlaces generados:</strong><br>
+                                    - <a href="${result.map_view_url}" target="_blank">Ver Mapa Interactivo</a><br>
+                                    - <a href="${result.google_maps_url}" target="_blank">Abrir en Google Maps</a><br>
+                                    - <a href="${result.download_url}" target="_blank">Descargar KML</a>
+                                `, 'info', 10000);
+                            }, 1000);
+                        }
+                    } else {
+                        showAlert(result.error || 'Error al enviar la incidencia', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showAlert('Error de conexión: ' + error.message, 'danger');
+                } finally {
+                    // Restaurar botón
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                }
             });
+            
+            // Función para mostrar alertas
+            function showAlert(message, type = 'info', duration = 5000) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                document.getElementById('alertContainer').appendChild(alertDiv);
+                
+                // Auto cerrar después de un tiempo
+                if (duration > 0) {
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.classList.remove('show');
+                            setTimeout(() => alertDiv.remove(), 150);
+                        }
+                    }, duration);
+                }
+            }
         });
     </script>
+    
+    <!-- Bootstrap JS (necesario para funcionalidades como cerrar alertas) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
