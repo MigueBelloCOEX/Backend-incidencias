@@ -121,7 +121,7 @@ def setup_database():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Crear tablas si no existen
+        # Crear tablas si no existen - MODIFICADA para nuevos campos
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS puntos_carretera (
                 id SERIAL PRIMARY KEY,
@@ -144,7 +144,21 @@ def setup_database():
                 tipo TEXT,
                 fecha TEXT,
                 descripcion TEXT,
-                kml_file TEXT
+                kml_file TEXT,
+                reseñable BOOLEAN,
+                sentido TEXT,
+                calzada TEXT,
+                ubicacion TEXT,
+                danos_infraestructura TEXT,
+                hora_deteccion TEXT,
+                reportado_por TEXT,
+                hora_llegada TEXT,
+                personal_llegada TEXT,
+                aviso_emergencia TEXT,
+                victimas BOOLEAN,
+                fallecidos INTEGER,
+                heridos INTEGER,
+                detalles_victimas TEXT
             );
         ''')
         
@@ -379,7 +393,7 @@ def crear_kml_incidencia(incidencia_id, carretera, kilometro, tipo, latitud, lon
         kml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
-    <name>Incidencia {incidencia_id}</name>
+    <name>Incidencia {incidencia_id</name>
     <Placemark>
       <name>Incidencia {incidencia_id}</name>
       <description>
@@ -627,7 +641,13 @@ def get_incidencias():
                 "id": row[0], "carretera": row[1], "kilometro": row[2], 
                 "latitud": row[3], "longitud": row[4], "tipo": row[5], 
                 "fecha": row[6], "descripcion": row[7], "kml_file": row[8],
-                "num_fotos": row[9]
+                "reseñable": row[9], "sentido": row[10], "calzada": row[11],
+                "ubicacion": row[12], "danos_infraestructura": row[13],
+                "hora_deteccion": row[14], "reportado_por": row[15],
+                "hora_llegada": row[16], "personal_llegada": row[17],
+                "aviso_emergencia": row[18], "victimas": row[19],
+                "fallecidos": row[20], "heridos": row[21],
+                "detalles_victimas": row[22], "num_fotos": row[23]
             }
             # Generar enlace público al KML
             if incidencia['kml_file']:
@@ -659,14 +679,29 @@ def crear_incidencia():
             data = request.get_json()
             files = []
         
+        # Obtener todos los campos del formulario
         incidencia_id = data.get('id')
         carretera = data.get('carretera')
         kilometro = data.get('kilometro')
         tipo = data.get('tipo')
         descripcion = data.get('descripcion', '')
+        reseñable = data.get('remarkable') == 'yes'
+        sentido = data.get('sentido', '')
+        calzada = data.get('calzada', '')
+        ubicacion = data.get('ubicacion', '')
+        danos_infraestructura = data.get('danos_infraestructura', '')
+        hora_deteccion = data.get('hora_deteccion', '')
+        reportado_por = data.get('reportado_por', '')
+        hora_llegada = data.get('hora_llegada', '')
+        personal_llegada = data.get('personal_llegada', '')
+        aviso_emergencia = data.get('aviso_emergencia', '')
+        victimas = data.get('victimas') == 'yes'
+        fallecidos = int(data.get('fallecidos', 0))
+        heridos = int(data.get('heridos', 0))
+        detalles_victimas = data.get('detalles_victimas', '')
         
         # Validar campos requeridos
-        if not all([incidencia_id, carretera, kilometro, tipo]):
+        if not all([incidencia_id, carretera, kilometro, tipo, descripcion]):
             return jsonify({'error': 'Faltan campos requeridos'}), 400
         
         # Obtener coordenadas
@@ -691,16 +726,23 @@ def crear_incidencia():
         if not kml_filename:
             return jsonify({'error': 'Error creando archivo KML'}), 500
         
-        # Guardar en base de datos
+        # Guardar en base de datos con todos los campos
         conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
             cursor.execute('''
-                INSERT INTO incidencias (id, carretera, kilometro, latitud, longitud, tipo, fecha, descripcion, kml_file)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO incidencias 
+                (id, carretera, kilometro, latitud, longitud, tipo, fecha, descripcion, kml_file,
+                 reseñable, sentido, calzada, ubicacion, danos_infraestructura, hora_deteccion,
+                 reportado_por, hora_llegada, personal_llegada, aviso_emergencia, victimas,
+                 fallecidos, heridos, detalles_victimas)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (incidencia_id, carretera.upper(), kilometro, latitud, longitud, tipo, 
-                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'), descripcion, kml_filename))
+                  datetime.now().strftime('%Y-%m-%d %H:%M:%S'), descripcion, kml_filename,
+                  reseñable, sentido, calzada, ubicacion, danos_infraestructura, hora_deteccion,
+                  reportado_por, hora_llegada, personal_llegada, aviso_emergencia, victimas,
+                  fallecidos, heridos, detalles_victimas))
             
             # Guardar información de fotos en la base de datos
             for foto_url in fotos_urls:
@@ -712,6 +754,9 @@ def crear_incidencia():
             conn.commit()
         except psycopg2.IntegrityError:
             return jsonify({'error': 'El ID de incidencia ya existe'}), 400
+        except Exception as e:
+            print(f"Error al insertar en BD: {e}")
+            return jsonify({'error': f'Error de base de datos: {str(e)}'}), 500
         finally:
             cursor.close()
         
@@ -724,6 +769,7 @@ def crear_incidencia():
         
         return jsonify({
             'success': True,
+            'message': 'Incidencia registrada correctamente',
             'kml_url': kml_url,
             'google_maps_url': google_maps_url,
             'map_view_url': map_view_url,
@@ -736,16 +782,18 @@ def crear_incidencia():
                 'latitud': latitud,
                 'longitud': longitud,
                 'descripcion': descripcion,
-                'fotos': fotos_urls
-            },
-            'instructions': {
-                'map_view': f'Ver mapa interactivo: {map_view_url}',
-                'google_maps': f'Abrir en Google Maps: {google_maps_url}',
-                'download_kml': f'Descargar KML: {download_url}'
+                'fotos': fotos_urls,
+                'reseñable': reseñable,
+                'sentido': sentido,
+                'calzada': calzada,
+                'ubicacion': ubicacion,
+                'hora_deteccion': hora_deteccion,
+                'reportado_por': reportado_por
             }
         })
         
     except Exception as e:
+        print(f"Error general: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         if conn:
@@ -886,7 +934,21 @@ def debug_incidencia(incidencia_id):
                 'tipo': incidencia[5],
                 'fecha': incidencia[6],
                 'descripcion': incidencia[7],
-                'kml_file': incidencia[8]
+                'kml_file': incidencia[8],
+                'reseñable': incidencia[9],
+                'sentido': incidencia[10],
+                'calzada': incidencia[11],
+                'ubicacion': incidencia[12],
+                'danos_infraestructura': incidencia[13],
+                'hora_deteccion': incidencia[14],
+                'reportado_por': incidencia[15],
+                'hora_llegada': incidencia[16],
+                'personal_llegada': incidencia[17],
+                'aviso_emergencia': incidencia[18],
+                'victimas': incidencia[19],
+                'fallecidos': incidencia[20],
+                'heridos': incidencia[21],
+                'detalles_victimas': incidencia[22]
             },
             'fotos': [{'id': foto[0], 'ruta': foto[2]} for foto in fotos],
             'links': {
@@ -937,6 +999,88 @@ def reset_database():
         setup_database()
         
         return jsonify({'success': True, 'message': 'Base de datos reiniciada exitosamente'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            release_db_connection(conn)
+
+# Ruta para actualizar la estructura de la base de datos sin perder datos
+@app.route('/api/update-database', methods=['POST'])
+def update_database():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar si las columnas ya existen y agregarlas si no
+        cursor.execute('''
+            DO $$ 
+            BEGIN
+                -- Verificar y agregar columnas si no existen
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='reseñable') THEN
+                    ALTER TABLE incidencias ADD COLUMN reseñable BOOLEAN;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='sentido') THEN
+                    ALTER TABLE incidencias ADD COLUMN sentido TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='calzada') THEN
+                    ALTER TABLE incidencias ADD COLUMN calzada TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='ubicacion') THEN
+                    ALTER TABLE incidencias ADD COLUMN ubicacion TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='danos_infraestructura') THEN
+                    ALTER TABLE incidencias ADD COLUMN danos_infraestructura TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='hora_deteccion') THEN
+                    ALTER TABLE incidencias ADD COLUMN hora_deteccion TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='reportado_por') THEN
+                    ALTER TABLE incidencias ADD COLUMN reportado_por TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='hora_llegada') THEN
+                    ALTER TABLE incidencias ADD COLUMN hora_llegada TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='personal_llegada') THEN
+                    ALTER TABLE incidencias ADD COLUMN personal_llegada TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='aviso_emergencia') THEN
+                    ALTER TABLE incidencias ADD COLUMN aviso_emergencia TEXT;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='victimas') THEN
+                    ALTER TABLE incidencias ADD COLUMN victimas BOOLEAN;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='fallecidos') THEN
+                    ALTER TABLE incidencias ADD COLUMN fallecidos INTEGER;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='heridos') THEN
+                    ALTER TABLE incidencias ADD COLUMN heridos INTEGER;
+                END IF;
+                
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='incidencias' AND column_name='detalles_victimas') THEN
+                    ALTER TABLE incidencias ADD COLUMN detalles_victimas TEXT;
+                END IF;
+            END $$;
+        ''')
+        
+        conn.commit()
+        cursor.close()
+        
+        return jsonify({'success': True, 'message': 'Estructura de base de datos actualizada exitosamente'})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
