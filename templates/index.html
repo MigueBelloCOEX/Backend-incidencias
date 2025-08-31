@@ -340,9 +340,6 @@
                                         <option value="">Seleccione una carretera</option>
                                         <option value="CA-35">CA-35</option>
                                         <option value="CA-36">CA-36</option>
-                                        <option value="A-4">A-4</option>
-                                        <option value="A-7">A-7</option>
-                                        <option value="AP-7">AP-7</option>
                                     </select>
                                 </div>
                             </div>
@@ -358,10 +355,6 @@
                                         <option value="">Seleccione sentido</option>
                                         <option value="creciente">Creciente</option>
                                         <option value="decreciente">Decreciente</option>
-                                        <option value="norte">Norte</option>
-                                        <option value="sur">Sur</option>
-                                        <option value="este">Este</option>
-                                        <option value="oeste">Oeste</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4 mb-3">
@@ -520,8 +513,6 @@
                                     <option value="accidente">🚗 Accidente</option>
                                     <option value="obra">🚧 Obra</option>
                                     <option value="clima">🌧️ Clima</option>
-                                    <option value="obstaculo">⚠️ Obstáculo</option>
-                                    <option value="retencion">🚦 Retención</option>
                                 </select>
                             </div>
                         </div>
@@ -608,40 +599,32 @@
         // URL base de la API (ajusta según tu entorno)
         const API_BASE_URL = window.location.origin;
         
-        // Almacenamiento de incidencias
-        let incidents = JSON.parse(localStorage.getItem('incidents')) || [];
+        // Almacenamiento de incidencias (en una aplicación real, estos datos vendrían de una API)
+        let incidents = JSON.parse(localStorage.getItem('incidents')) || [
+            {
+                id: "INC-001",
+                carretera: "CA-35",
+                kilometro: "5+200",
+                tipo: "Accidente",
+                fecha: "2023-10-15 14:30",
+                map_view_url: "https://maps.google.com/?q=36.5281,-6.2881",
+                google_maps_url: "https://maps.google.com/?q=36.5281,-6.2881",
+                download_url: "/api/incidencias/INC-001/kml"
+            },
+            {
+                id: "INC-002",
+                carretera: "CA-36",
+                kilometro: "12+450",
+                tipo: "Obra",
+                fecha: "2023-10-16 09:15",
+                map_view_url: "https://maps.google.com/?q=36.5200,-6.2750",
+                google_maps_url: "https://maps.google.com/?q=36.5200,-6.2750",
+                download_url: "/api/incidencias/INC-002/kml"
+            }
+        ];
         
-        // Guardar datos iniciales en localStorage si no hay ninguno
-        if (incidents.length === 0) {
-            // Datos de ejemplo
-            incidents = [
-                {
-                    id: "INC-001",
-                    carretera: "CA-35",
-                    kilometro: "5+200",
-                    tipo: "Accidente",
-                    fecha: "2023-10-15 14:30",
-                    sentido: "creciente",
-                    calzada: "carril-derecho",
-                    descripcion: "Colisión entre dos vehículos",
-                    map_view_url: "https://www.google.com/maps?q=CA-35+km+5.2",
-                    google_maps_url: "https://www.google.com/maps?q=CA-35+km+5.2",
-                    download_url: "/api/incidencias/INC-001/kml"
-                },
-                {
-                    id: "INC-002",
-                    carretera: "CA-36",
-                    kilometro: "12+450",
-                    tipo: "Obra",
-                    fecha: "2023-10-16 09:15",
-                    sentido: "decreciente",
-                    calzada: "arcen-derecho",
-                    descripcion: "Trabajos de mantenimiento en calzada",
-                    map_view_url: "https://www.google.com/maps?q=CA-36+km+12.45",
-                    google_maps_url: "https://www.google.com/maps?q=CA-36+km+12.45",
-                    download_url: "/api/incidencias/INC-002/kml"
-                }
-            ];
+        // Guardar datos iniciales en localStorage
+        if (!localStorage.getItem('incidents')) {
             localStorage.setItem('incidents', JSON.stringify(incidents));
         }
         
@@ -749,20 +732,15 @@
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
                 
                 try {
+                    // En una aplicación real, aquí enviarías los datos al servidor
+                    // Simulamos una respuesta exitosa del servidor
+                    
                     // Obtener valores del formulario
+                    const formData = new FormData(form);
                     const incidenceId = document.getElementById('incidenceId').value;
                     const carretera = document.getElementById('highway').value;
                     const kilometro = document.getElementById('pk').value;
                     const tipo = document.getElementById('incidenceType').value;
-                    const sentido = document.getElementById('direction').value;
-                    const calzada = document.getElementById('lane').value;
-                    const descripcion = document.getElementById('incidenceDescription').value;
-                    
-                    // Convertir PK a formato decimal para coordenadas (ej: "5+200" → 5.2)
-                    const pkDecimal = convertPKtoDecimal(kilometro);
-                    
-                    // Generar coordenadas aproximadas basadas en la carretera y PK
-                    const coords = generateCoordinates(carretera, pkDecimal);
                     
                     // Crear objeto de incidencia
                     const newIncident = {
@@ -770,15 +748,10 @@
                         carretera: carretera,
                         kilometro: kilometro,
                         tipo: tipo,
-                        sentido: sentido,
-                        calzada: calzada,
-                        descripcion: descripcion,
                         fecha: new Date().toLocaleString('es-ES'),
-                        remarkable: remarkable.value,
-                        // Generar enlaces de mapas correctos
-                        map_view_url: `https://www.google.com/maps?q=${coords.lat},${coords.lng}&z=16`,
-                        google_maps_url: `https://www.google.com/maps?q=${coords.lat},${coords.lng}&z=16`,
-                        download_url: `${API_BASE_URL}/api/incidencias/${incidenceId}/kml`
+                        map_view_url: `https://maps.google.com/?q=incidencia-${incidenceId}`,
+                        google_maps_url: `https://maps.google.com/?q=incidencia-${incidenceId}`,
+                        download_url: `/api/incidencias/${incidenceId}/kml`
                     };
                     
                     // Añadir a la lista de incidencias
@@ -813,38 +786,6 @@
                 }
             });
             
-            // Función para convertir PK a decimal
-            function convertPKtoDecimal(pk) {
-                // Formato esperado: "5+200" → 5.2
-                if (pk.includes('+')) {
-                    const parts = pk.split('+');
-                    const km = parseInt(parts[0]) || 0;
-                    const m = parseInt(parts[1]) || 0;
-                    return km + (m / 1000);
-                }
-                return parseFloat(pk) || 0;
-            }
-            
-            // Función para generar coordenadas aproximadas basadas en carretera y PK
-            function generateCoordinates(highway, pkDecimal) {
-                // Coordenadas base para diferentes carreteras
-                const baseCoords = {
-                    'CA-35': { lat: 36.5281, lng: -6.2881, direction: 0.01 }, // Cádiz
-                    'CA-36': { lat: 36.5200, lng: -6.2750, direction: 0.01 }, // Cádiz
-                    'A-4': { lat: 37.3920, lng: -5.9940, direction: 0.1 }, // Sevilla
-                    'A-7': { lat: 36.7180, lng: -4.4200, direction: 0.1 }, // Málaga
-                    'AP-7': { lat: 41.3851, lng: 2.1734, direction: 0.1 } // Barcelona
-                };
-                
-                const base = baseCoords[highway] || { lat: 40.4168, lng: -3.7038, direction: 0.01 }; // Madrid por defecto
-                
-                // Ajustar coordenadas según el PK (simulación)
-                return {
-                    lat: base.lat + (pkDecimal * base.direction / 100),
-                    lng: base.lng + (pkDecimal * base.direction / 100)
-                };
-            }
-            
             // Función para cargar incidencias en el historial
             function loadIncidents() {
                 const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -867,8 +808,7 @@
                     filteredIncidents = incidents.filter(incident => 
                         incident.id.toLowerCase().includes(searchTerm) ||
                         incident.carretera.toLowerCase().includes(searchTerm) ||
-                        incident.tipo.toLowerCase().includes(searchTerm) ||
-                        (incident.descripcion && incident.descripcion.toLowerCase().includes(searchTerm))
+                        incident.tipo.toLowerCase().includes(searchTerm)
                     );
                 }
                 
@@ -946,34 +886,21 @@
                                     </div>
                                     <div class="modal-body">
                                         <div class="row mb-3">
-                                            <div class="col-md-4">
+                                            <div class="col-md-6">
                                                 <strong>Carretera:</strong> ${incident.carretera}
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-6">
                                                 <strong>PK:</strong> ${incident.kilometro}
-                                            </div>
-                                            <div class="col-md-4">
-                                                <strong>Sentido:</strong> ${incident.sentido || 'No especificado'}
                                             </div>
                                         </div>
                                         <div class="row mb-3">
-                                            <div class="col-md-4">
+                                            <div class="col-md-6">
                                                 <strong>Tipo:</strong> ${incident.tipo}
                                             </div>
-                                            <div class="col-md-4">
-                                                <strong>Calzada:</strong> ${incident.calzada || 'No especificado'}
-                                            </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-6">
                                                 <strong>Fecha:</strong> ${incident.fecha}
                                             </div>
                                         </div>
-                                        ${incident.descripcion ? `
-                                        <div class="row mb-3">
-                                            <div class="col-12">
-                                                <strong>Descripción:</strong> ${incident.descripcion}
-                                            </div>
-                                        </div>
-                                        ` : ''}
                                         <div class="links-container">
                                             <h6>Enlaces:</h6>
                                             ${incident.map_view_url ? `
@@ -982,9 +909,6 @@
                                                     <button class="copy-btn" data-url="${incident.map_view_url}">
                                                         <i class="fas fa-copy"></i> Copiar
                                                     </button>
-                                                    <a href="${incident.map_view_url}" target="_blank" class="copy-btn ms-2" style="background-color: #28a745;">
-                                                        <i class="fas fa-external-link-alt"></i> Abrir
-                                                    </a>
                                                 </div>
                                             ` : ''}
                                             ${incident.google_maps_url ? `
@@ -993,9 +917,6 @@
                                                     <button class="copy-btn" data-url="${incident.google_maps_url}">
                                                         <i class="fas fa-copy"></i> Copiar
                                                     </button>
-                                                    <a href="${incident.google_maps_url}" target="_blank" class="copy-btn ms-2" style="background-color: #28a745;">
-                                                        <i class="fas fa-external-link-alt"></i> Abrir
-                                                    </a>
                                                 </div>
                                             ` : ''}
                                             ${incident.download_url ? `
