@@ -601,13 +601,13 @@
         const YEARLY_COUNTER_KEY = 'contador_anual_incidencias';
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Generar ID automático al cargar la página
-            generateIncidenceId();
-            
             // Cargar incidencias al abrir la pestaña de historial
             document.getElementById('history-tab').addEventListener('click', function() {
                 loadIncidents();
             });
+            
+            // Cargar el ID actual al cargar la página
+            displayCurrentIncidenceId();
             
             // Buscar incidencias
             document.getElementById('searchButton').addEventListener('click', function() {
@@ -711,9 +711,12 @@
                     const formData = new FormData(form);
                     formData.append('remarkable', remarkable.value);
                     
+                    // Generar un nuevo ID y obtenerlo
+                    const newId = generateNewIncidenceId();
+
                     // Convertir FormData a objeto para guardar en localStorage
                     const incidenceData = {
-                        id: document.getElementById('incidenceId').value,
+                        id: newId,
                         carretera: formData.get('carretera'),
                         kilometro: formData.get('kilometro'),
                         sentido: formData.get('sentido'),
@@ -756,8 +759,8 @@
                     victimDetails.style.display = 'none';
                     photoPreview.innerHTML = '';
                     
-                    // Generar nuevo ID para la próxima incidencia
-                    generateIncidenceId();
+                    // Mostrar el nuevo ID para la siguiente incidencia
+                    displayCurrentIncidenceId();
                     
                 } catch (error) {
                     console.error('Error:', error);
@@ -789,20 +792,36 @@
                 return counterData.counter;
             }
             
-            // Función para generar ID de incidencia automático (yy.mm.dd - número con correlación anual)
-            function generateIncidenceId() {
+            // Función para obtener el ID sin incrementar (para mostrarlo en la carga)
+            function getCurrentIncidenceId() {
                 const now = new Date();
                 const year = now.getFullYear().toString().slice(-2);
                 const month = String(now.getMonth() + 1).padStart(2, '0');
                 const day = String(now.getDate()).padStart(2, '0');
                 
-                // Obtener el número secuencial anual
+                const storedCounter = localStorage.getItem(YEARLY_COUNTER_KEY);
+                let counter = storedCounter ? JSON.parse(storedCounter).counter : 0;
+                
+                return `${year}.${month}.${day} - ${counter + 1}`;
+            }
+
+            // Función para generar un nuevo ID y mostrarlo
+            function generateNewIncidenceId() {
+                const now = new Date();
+                const year = now.getFullYear().toString().slice(-2);
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                
                 const nextNumber = getNextAnnualCounter();
                 
-                const incidenceId = `${year}.${month}.${day} - ${nextNumber}`;
-                document.getElementById('incidenceId').value = incidenceId;
+                return `${year}.${month}.${day} - ${nextNumber}`;
             }
-            
+
+            function displayCurrentIncidenceId() {
+                const currentId = getCurrentIncidenceId();
+                document.getElementById('incidenceId').value = currentId;
+            }
+
             // Función para guardar incidencia en localStorage
             function saveIncidence(incidenceData) {
                 const incidencias = getIncidencias();
