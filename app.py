@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file
+vfrom flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
 import psycopg2
 from psycopg2 import pool
@@ -567,7 +567,7 @@ def generar_vista_mapa(incidencia_id, latitud, longitud, carretera, kilometro, t
             
             // Añadir capa de OpenStreetMap
             L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }}).addTo(map);
             
             // Crear icono personalizado según el tipo
@@ -680,7 +680,7 @@ def crear_incidencia():
             files = []
         
         # Obtener todos los campos del formulario
-        incidencia_id = data.get('id')
+        incidencia_id = data.get('id', '').strip() # Strip para limpiar espacios
         carretera = data.get('carretera')
         kilometro = data.get('kilometro')
         tipo = data.get('tipo')
@@ -806,6 +806,9 @@ def map_view(incidencia_id):
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Strip para limpiar espacios
+        incidencia_id = incidencia_id.strip()
+        
         cursor.execute('SELECT * FROM incidencias WHERE id = %s', (incidencia_id,))
         incidencia = cursor.fetchone()
         
@@ -907,6 +910,9 @@ def debug_incidencia(incidencia_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Strip para limpiar espacios
+        incidencia_id = incidencia_id.strip()
         
         cursor.execute('SELECT * FROM incidencias WHERE id = %s', (incidencia_id,))
         incidencia = cursor.fetchone()
@@ -1099,4 +1105,3 @@ except Exception as e:
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
-
