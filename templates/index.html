@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Incidencias COEX CA03</title>
+    <title>Formulario de Incidencias Viales</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -303,7 +303,7 @@
     <div class="header text-center">
         <div class="container">
             <h1><i class="fas fa-traffic-light"></i> Gestión de Incidencias Viales</h1>
-            <p class="lead">Sistema de registro y seguimiento de incidencias en CA-35 y CA-36</p>
+            <p class="lead">Sistema de registro y seguimiento de incidencias en carreteras</p>
         </div>
     </div>
 
@@ -521,7 +521,7 @@
                                 <select class="form-select" id="incidenceType" name="tipo" required>
                                     <option value="">Seleccionar tipo...</option>
                                     <option value="accidente">🚗 Accidente</option>
-                                    <option value="obra">🚧 Incidencia</option>
+                                    <option value="obra">🚧 Obra</option>
                                     <option value="clima">🌧️ Clima</option>
                                 </select>
                             </div>
@@ -558,6 +558,7 @@
                                 <option value="today">Hoy</option>
                                 <option value="week">Esta semana</option>
                                 <option value="month">Este mes</option>
+                                <option value="year">Este año</option>
                             </select>
                         </div>
                         <div class="col-md-3 mb-3">
@@ -611,6 +612,7 @@
         
         // Clave para almacenamiento local
         const STORAGE_KEY = 'incidencias_viales';
+        const YEARLY_COUNTER_KEY = 'contador_anual_incidencias';
         
         document.addEventListener('DOMContentLoaded', function() {
             // Generar ID automático al cargar la página
@@ -780,30 +782,39 @@
                 }
             });
             
-            // Función para generar ID de incidencia automático (yy.mm.dd - número)
+            // Función para obtener y actualizar el contador anual
+            function getNextAnnualCounter() {
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                
+                // Obtener el contador almacenado
+                const storedCounter = localStorage.getItem(YEARLY_COUNTER_KEY);
+                let counterData = storedCounter ? JSON.parse(storedCounter) : { year: currentYear, counter: 0 };
+                
+                // Si el año almacenado es diferente al actual, reiniciar el contador
+                if (counterData.year !== currentYear) {
+                    counterData = { year: currentYear, counter: 0 };
+                }
+                
+                // Incrementar y guardar el contador
+                counterData.counter++;
+                localStorage.setItem(YEARLY_COUNTER_KEY, JSON.stringify(counterData));
+                
+                return counterData.counter;
+            }
+            
+            // Función para generar ID de incidencia automático (yy.mm.dd - número con correlación anual)
             function generateIncidenceId() {
                 const now = new Date();
                 const year = now.getFullYear().toString().slice(-2);
                 const month = String(now.getMonth() + 1).padStart(2, '0');
                 const day = String(now.getDate()).padStart(2, '0');
                 
-                // Obtener el número secuencial para el día
-                const incidenciasHoy = getIncidenciasDelDia(now);
-                const nextNumber = incidenciasHoy.length + 1;
+                // Obtener el número secuencial anual
+                const nextNumber = getNextAnnualCounter();
                 
                 const incidenceId = `${year}.${month}.${day} - ${nextNumber}`;
                 document.getElementById('incidenceId').value = incidenceId;
-            }
-            
-            // Función para obtener incidencias del día específico
-            function getIncidenciasDelDia(fecha) {
-                const incidencias = getIncidencias();
-                return incidencias.filter(incidencia => {
-                    const fechaInc = new Date(incidencia.fecha_creacion);
-                    return fechaInc.getDate() === fecha.getDate() &&
-                           fechaInc.getMonth() === fecha.getMonth() &&
-                           fechaInc.getFullYear() === fecha.getFullYear();
-                });
             }
             
             // Función para guardar incidencia en localStorage
@@ -862,6 +873,8 @@
                             case 'month':
                                 return fechaInc.getMonth() === now.getMonth() &&
                                        fechaInc.getFullYear() === now.getFullYear();
+                            case 'year':
+                                return fechaInc.getFullYear() === now.getFullYear();
                             default:
                                 return true;
                         }
