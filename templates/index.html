@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Incidencias Viales</title>
+    <title>Formulario de Incidencias COEX CA03</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -253,6 +253,12 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
+        .table-action-btn {
+            margin: 2px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
         @media (max-width: 768px) {
             .time-input-group {
                 flex-direction: column;
@@ -284,6 +290,10 @@
                 display: block;
                 overflow-x: auto;
             }
+            
+            .table-action-btn {
+                margin-bottom: 5px;
+            }
         }
     </style>
 </head>
@@ -293,7 +303,7 @@
     <div class="header text-center">
         <div class="container">
             <h1><i class="fas fa-traffic-light"></i> Gestión de Incidencias Viales</h1>
-            <p class="lead">Sistema de registro y seguimiento de incidencias en carreteras</p>
+            <p class="lead">Sistema de registro y seguimiento de incidencias en CA-35 y CA-36</p>
         </div>
     </div>
 
@@ -511,7 +521,7 @@
                                 <select class="form-select" id="incidenceType" name="tipo" required>
                                     <option value="">Seleccionar tipo...</option>
                                     <option value="accidente">🚗 Accidente</option>
-                                    <option value="obra">🚧 Obra</option>
+                                    <option value="obra">🚧 Incidencia</option>
                                     <option value="clima">🌧️ Clima</option>
                                 </select>
                             </div>
@@ -739,16 +749,18 @@
                     // Guardar en localStorage
                     saveIncidence(incidenceData);
                     
+                    // Generar enlace del mapa interactivo
+                    const mapViewUrl = `https://backend-incidencia.onrender.com/api/map-view/${incidenceData.id}`;
+                    
                     // Simular respuesta de la API
                     const result = {
-                        map_view_url: `https://maps.google.com/?q=${Math.random().toFixed(4)},${Math.random().toFixed(4)}`,
-                        google_maps_url: `https://maps.google.com/?q=${Math.random().toFixed(4)},${Math.random().toFixed(4)}`,
+                        map_view_url: mapViewUrl,
                         download_url: `/api/incidencias/${incidenceData.id}/kml`
                     };
                     
                     showAlert('Incidencia guardada correctamente', 'success');
                     
-                    if (result.map_view_url || result.google_maps_url || result.download_url) {
+                    if (result.map_view_url || result.download_url) {
                         displayGeneratedLinks(result);
                     }
                     
@@ -867,6 +879,7 @@
                 filteredIncidencias.forEach(incidencia => {
                     const fecha = new Date(incidencia.fecha_creacion);
                     const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
+                    const mapViewUrl = `https://backend-incidencia.onrender.com/api/map-view/${incidencia.id}`;
                     
                     const row = document.createElement('tr');
                     
@@ -877,10 +890,13 @@
                         <td>${incidencia.tipo}</td>
                         <td>${fechaFormateada}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary view-incident" data-id="${incidencia.id}">
+                            <button class="btn btn-sm btn-outline-primary view-incident table-action-btn" data-id="${incidencia.id}">
                                 <i class="fas fa-eye"></i> Ver
                             </button>
-                            <button class="btn btn-sm btn-outline-danger delete-incident" data-id="${incidencia.id}">
+                            <button class="btn btn-sm btn-outline-info copy-map-link table-action-btn" data-url="${mapViewUrl}">
+                                <i class="fas fa-copy"></i> Copiar enlace
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-incident table-action-btn" data-id="${incidencia.id}">
                                 <i class="fas fa-trash"></i> Eliminar
                             </button>
                         </td>
@@ -894,6 +910,14 @@
                     button.addEventListener('click', function() {
                         const incidentId = this.getAttribute('data-id');
                         viewIncident(incidentId);
+                    });
+                });
+                
+                // Añadir event listeners a los botones de copiar enlace
+                document.querySelectorAll('.copy-map-link').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const mapUrl = this.getAttribute('data-url');
+                        copyToClipboard(mapUrl, 'Mapa interactivo');
                     });
                 });
                 
@@ -914,6 +938,7 @@
                 if (incident) {
                     const fecha = new Date(incident.fecha_creacion);
                     const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
+                    const mapViewUrl = `https://backend-incidencia.onrender.com/api/map-view/${incident.id}`;
                     
                     const modalHtml = `
                         <div class="modal fade" id="incidentModal" tabindex="-1" aria-hidden="true">
@@ -995,6 +1020,15 @@
                                             ` : ''}
                                         </div>
                                         ` : ''}
+                                        <div class="links-container mt-3">
+                                            <h6>Enlaces de la incidencia:</h6>
+                                            <div class="link-item">
+                                                <div class="link-text">Mapa Interactivo: ${mapViewUrl}</div>
+                                                <button class="copy-btn" data-url="${mapViewUrl}">
+                                                    <i class="fas fa-copy"></i> Copiar
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -1010,6 +1044,17 @@
                     // Mostrar el modal
                     const modal = new bootstrap.Modal(document.getElementById('incidentModal'));
                     modal.show();
+                    
+                    // Añadir event listener para el botón de copiar en el modal
+                    document.getElementById('incidentModal').addEventListener('shown.bs.modal', function() {
+                        const copyButton = this.querySelector('.copy-btn');
+                        if (copyButton) {
+                            copyButton.addEventListener('click', function() {
+                                const url = this.getAttribute('data-url');
+                                copyToClipboard(url, 'Mapa interactivo');
+                            });
+                        }
+                    });
                     
                     // Eliminar el modal cuando se cierre
                     document.getElementById('incidentModal').addEventListener('hidden.bs.modal', function() {
@@ -1063,11 +1108,6 @@
                         name: 'Ver Mapa Interactivo', 
                         url: result.map_view_url,
                         icon: 'map-marked-alt'
-                    },
-                    { 
-                        name: 'Abrir en Google Maps', 
-                        url: result.google_maps_url,
-                        icon: 'map'
                     },
                     { 
                         name: 'Descargar KML', 
