@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Incidencias COEXCA03</title>
+    <title>Formulario de Incidencias Viales</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -303,7 +303,7 @@
     <div class="header text-center">
         <div class="container">
             <h1><i class="fas fa-traffic-light"></i> Gestión de Incidencias Viales</h1>
-            <p class="lead">Sistema de registro y seguimiento de incidencias en carretera</p>
+            <p class="lead">Sistema de registro y seguimiento de incidencias en carreteras</p>
         </div>
     </div>
 
@@ -593,24 +593,31 @@
     </footer>
 
     <script>
+        // URL base de la API (ajusta según tu entorno)
+        const API_BASE_URL = window.location.origin;
+        
+        // Clave para almacenamiento local
+        const STORAGE_KEY = 'incidencias_viales';
+        const YEARLY_COUNTER_KEY = 'contador_anual_incidencias';
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Generar ID automático al cargar la página
             generateIncidenceId();
             
             // Cargar incidencias al abrir la pestaña de historial
             document.getElementById('history-tab').addEventListener('click', function() {
-                loadIncidentsFromBackend();
+                loadIncidents();
             });
             
             // Buscar incidencias
             document.getElementById('searchButton').addEventListener('click', function() {
-                loadIncidentsFromBackend();
+                loadIncidents();
             });
             
             // Permitir búsqueda con la tecla Enter
             document.getElementById('searchInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
-                    loadIncidentsFromBackend();
+                    loadIncidents();
                 }
             });
             
@@ -700,36 +707,61 @@
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
                 
                 try {
+                    // Obtener datos del formulario
                     const formData = new FormData(form);
+                    formData.append('remarkable', remarkable.value);
                     
-                    const response = await fetch('/api/incidencias', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    // Convertir FormData a objeto para guardar en localStorage
+                    const incidenceData = {
+                        id: document.getElementById('incidenceId').value,
+                        carretera: formData.get('carretera'),
+                        kilometro: formData.get('kilometro'),
+                        sentido: formData.get('sentido'),
+                        calzada: formData.get('calzada'),
+                        ubicacion: formData.get('ubicacion'),
+                        descripcion: formData.get('descripcion'),
+                        danos_infraestructura: formData.get('danos_infraestructura'),
+                        hora_deteccion: formData.get('hora_deteccion'),
+                        reportado_por: formData.get('reportado_por'),
+                        hora_llegada: formData.get('hora_llegada'),
+                        personal_llegada: formData.get('personal_llegada'),
+                        aviso_emergencia: formData.get('aviso_emergencia'),
+                        victimas: formData.get('victimas'),
+                        fallecidos: formData.get('fallecidos'),
+                        heridos: formData.get('heridos'),
+                        detalles_victimas: formData.get('detalles_victimas'),
+                        tipo: formData.get('tipo'),
+                        fecha_creacion: new Date().toISOString()
+                    };
                     
-                    const result = await response.json();
+                    // Guardar en localStorage
+                    saveIncidence(incidenceData);
                     
-                    if (response.ok) {
-                        showAlert('Incidencia registrada correctamente', 'success');
-                        
-                        if (result.map_view_url || result.download_url) {
-                            displayGeneratedLinks(result);
-                        }
-                        
-                        form.reset();
-                        victimDetails.style.display = 'none';
-                        photoPreview.innerHTML = '';
-                        
-                        // Generar nuevo ID para la próxima incidencia
-                        generateIncidenceId();
-                        
-                    } else {
-                        showAlert('Error: ' + result.error, 'danger');
+                    // Generar enlace del mapa interactivo
+                    const mapViewUrl = `https://backend-incidencia.onrender.com/api/map-view/${incidenceData.id}`;
+                    
+                    // Simular respuesta de la API
+                    const result = {
+                        map_view_url: mapViewUrl,
+                        download_url: `/api/incidencias/${incidenceData.id}/kml`
+                    };
+                    
+                    showAlert('Incidencia guardada correctamente', 'success');
+                    
+                    if (result.map_view_url || result.download_url) {
+                        displayGeneratedLinks(result);
                     }
                     
+                    form.reset();
+                    victimDetails.style.display = 'none';
+                    photoPreview.innerHTML = '';
+                    
+                    // Generar nuevo ID para la próxima incidencia
+                    generateIncidenceId();
+                    
                 } catch (error) {
-                    console.error('Error al enviar la incidencia:', error);
-                    showAlert('Error al enviar la incidencia. El servidor podría no estar disponible.', 'danger');
+                    console.error('Error:', error);
+                    showAlert('Error al guardar la incidencia: ' + error.message, 'danger');
                 } finally {
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
@@ -741,15 +773,16 @@
                 const now = new Date();
                 const currentYear = now.getFullYear();
                 
-                // Clave para almacenamiento local para el contador anual
-                const YEARLY_COUNTER_KEY = 'yearly_incidence_counter';
+                // Obtener el contador almacenado
                 const storedCounter = localStorage.getItem(YEARLY_COUNTER_KEY);
-                let counterData = storedCounter ? JSON.parse(storedCounter) : null;
+                let counterData = storedCounter ? JSON.parse(storedCounter) : { year: currentYear, counter: 0 };
                 
-                if (!counterData || counterData.year !== currentYear) {
+                // Si el año almacenado es diferente al actual, reiniciar el contador
+                if (counterData.year !== currentYear) {
                     counterData = { year: currentYear, counter: 0 };
                 }
                 
+                // Incrementar y guardar el contador
                 counterData.counter++;
                 localStorage.setItem(YEARLY_COUNTER_KEY, JSON.stringify(counterData));
                 
@@ -757,156 +790,155 @@
             }
             
             // Función para generar ID de incidencia automático (yy.mm.dd - número con correlación anual)
-           function generateIncidentId() {
-                const today = new Date();
-                const year = String(today.getFullYear()).slice(-2);
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
+            function generateIncidenceId() {
+                const now = new Date();
+                const year = now.getFullYear().toString().slice(-2);
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
                 
-                // Obtener el contador del almacenamiento local o inicializarlo
-                let counter = localStorage.getItem('incidentCounter');
-                if (!counter) {
-                    counter = 0;
-                } else {
-                    counter = parseInt(counter);
-                }
-            
-                // Incrementar el contador para la nueva incidencia
-                counter++;
-            
-                // Guardar el nuevo contador en el almacenamiento local
-                localStorage.setItem('incidentCounter', counter);
-            
-                return `${year}.${month}.${day} - ${counter}`;
+                // Obtener el número secuencial anual
+                const nextNumber = getNextAnnualCounter();
+                
+                const incidenceId = `${year}.${month}.${day} - ${nextNumber}`;
+                document.getElementById('incidenceId').value = incidenceId;
             }
             
-            // Función para cargar incidencias desde el backend
-            async function loadIncidentsFromBackend() {
-                const searchInput = document.getElementById('searchInput').value;
+            // Función para guardar incidencia en localStorage
+            function saveIncidence(incidenceData) {
+                const incidencias = getIncidencias();
+                incidencias.push(incidenceData);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(incidencias));
+            }
+            
+            // Función para obtener todas las incidencias
+            function getIncidencias() {
+                const incidencias = localStorage.getItem(STORAGE_KEY);
+                return incidencias ? JSON.parse(incidencias) : [];
+            }
+            
+            // Función para cargar incidencias en el historial
+            function loadIncidents() {
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
                 const dateFilter = document.getElementById('dateFilter').value;
+                const now = new Date();
+                
+                const incidencias = getIncidencias();
                 const tbody = document.getElementById('incidenceTableBody');
+                tbody.innerHTML = '';
                 
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
-                
-                try {
-                    const response = await fetch('/api/incidencias');
-                    const incidencias = await response.json();
-                    
-                    if (!response.ok) {
-                        throw new Error(incidencias.error || 'Error al cargar incidencias');
-                    }
-                    
-                    let filteredIncidencias = incidencias;
-                    
-                    // Filtrar por texto
-                    if (searchInput) {
-                        const searchTerm = searchInput.toLowerCase();
-                        filteredIncidencias = filteredIncidencias.filter(incidencia => 
-                            incidencia.id.toLowerCase().includes(searchTerm) ||
-                            incidencia.carretera.toLowerCase().includes(searchTerm) ||
-                            incidencia.descripcion.toLowerCase().includes(searchTerm)
-                        );
-                    }
-                    
-                    // Filtrar por fecha
-                    const now = new Date();
-                    if (dateFilter !== 'all') {
-                        filteredIncidencias = filteredIncidencias.filter(incidencia => {
-                            const fechaInc = new Date(incidencia.fecha);
-                            
-                            switch(dateFilter) {
-                                case 'today':
-                                    return fechaInc.getDate() === now.getDate() &&
-                                           fechaInc.getMonth() === now.getMonth() &&
-                                           fechaInc.getFullYear() === now.getFullYear();
-                                case 'week':
-                                    const startOfWeek = new Date(now);
-                                    startOfWeek.setDate(now.getDate() - now.getDay());
-                                    startOfWeek.setHours(0, 0, 0, 0);
-                                    return fechaInc >= startOfWeek;
-                                case 'month':
-                                    return fechaInc.getMonth() === now.getMonth() &&
-                                           fechaInc.getFullYear() === now.getFullYear();
-                                case 'year':
-                                    return fechaInc.getFullYear() === now.getFullYear();
-                                default:
-                                    return true;
-                            }
-                        });
-                    }
-                    
-                    // Ordenar por fecha (más recientes primero)
-                    filteredIncidencias.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-                    
-                    tbody.innerHTML = '';
-                    if (filteredIncidencias.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron incidencias</td></tr>';
-                        return;
-                    }
-                    
-                    filteredIncidencias.forEach(incidencia => {
-                        const row = document.createElement('tr');
-                        const fecha = new Date(incidencia.fecha);
-                        const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
-                        
-                        row.innerHTML = `
-                            <td>${incidencia.id}</td>
-                            <td>${incidencia.carretera}</td>
-                            <td>${incidencia.kilometro}</td>
-                            <td>${incidencia.tipo}</td>
-                            <td>${fechaFormateada}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary view-incident table-action-btn" data-id="${incidencia.id}">
-                                    <i class="fas fa-eye"></i> Ver
-                                </button>
-                                <a href="/api/map-view/${incidencia.id}" target="_blank" class="btn btn-sm btn-outline-info table-action-btn">
-                                    <i class="fas fa-map-marked-alt"></i> Mapa
-                                </a>
-                                <a href="/api/download-kml/${incidencia.id}" class="btn btn-sm btn-outline-success table-action-btn">
-                                    <i class="fas fa-download"></i> KML
-                                </a>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-
-                    // Añadir event listeners a los botones de ver
-                    document.querySelectorAll('.view-incident').forEach(button => {
-                        button.addEventListener('click', function() {
-                            const incidentId = this.getAttribute('data-id');
-                            viewIncidentFromBackend(incidentId);
-                        });
-                    });
-                    
-                } catch (error) {
-                    console.error('Error al cargar incidencias:', error);
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error al cargar datos. El servidor podría no estar disponible.</td></tr>`;
+                if (incidencias.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay incidencias registradas</td></tr>';
+                    return;
                 }
-            }
-
-            // Función para ver los detalles de una incidencia desde el backend
-            async function viewIncidentFromBackend(incidentId) {
-                try {
-                    const response = await fetch(`/api/debug/incidencia/${incidentId}`);
-                    const result = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(result.error || 'Incidencia no encontrada');
-                    }
-                    
-                    const incident = result.incidencia;
-                    const fotos = result.fotos;
-                    const fecha = new Date(incident.fecha);
+                
+                // Filtrar incidencias según criterios de búsqueda
+                let filteredIncidencias = incidencias;
+                
+                if (searchTerm) {
+                    filteredIncidencias = incidencias.filter(incidencia => 
+                        incidencia.id.toLowerCase().includes(searchTerm) ||
+                        incidencia.carretera.toLowerCase().includes(searchTerm) ||
+                        incidencia.descripcion.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                if (dateFilter !== 'all') {
+                    filteredIncidencias = filteredIncidencias.filter(incidencia => {
+                        const fechaInc = new Date(incidencia.fecha_creacion);
+                        
+                        switch(dateFilter) {
+                            case 'today':
+                                return fechaInc.getDate() === now.getDate() &&
+                                       fechaInc.getMonth() === now.getMonth() &&
+                                       fechaInc.getFullYear() === now.getFullYear();
+                            case 'week':
+                                const startOfWeek = new Date(now);
+                                startOfWeek.setDate(now.getDate() - now.getDay());
+                                startOfWeek.setHours(0, 0, 0, 0);
+                                return fechaInc >= startOfWeek;
+                            case 'month':
+                                return fechaInc.getMonth() === now.getMonth() &&
+                                       fechaInc.getFullYear() === now.getFullYear();
+                            case 'year':
+                                return fechaInc.getFullYear() === now.getFullYear();
+                            default:
+                                return true;
+                        }
+                    });
+                }
+                
+                // Ordenar por fecha (más recientes primero)
+                filteredIncidencias.sort((a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion));
+                
+                if (filteredIncidencias.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron incidencias</td></tr>';
+                    return;
+                }
+                
+                filteredIncidencias.forEach(incidencia => {
+                    const fecha = new Date(incidencia.fecha_creacion);
                     const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
+                    const mapViewUrl = `https://backend-incidencia.onrender.com/api/map-view/${incidencia.id}`;
                     
-                    const fotosHtml = fotos.length > 0 ?
-                        `<div class="mt-3">
-                            <h6>Fotos:</h6>
-                            <div class="d-flex flex-wrap gap-2">
-                                ${fotos.map(foto => `<img src="${foto.ruta}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;" alt="Foto">`).join('')}
-                            </div>
-                        </div>` : '';
-
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${incidencia.id}</td>
+                        <td>${incidencia.carretera}</td>
+                        <td>${incidencia.kilometro}</td>
+                        <td>${incidencia.tipo}</td>
+                        <td>${fechaFormateada}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary view-incident table-action-btn" data-id="${incidencia.id}">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button class="btn btn-sm btn-outline-info copy-map-link table-action-btn" data-url="${mapViewUrl}">
+                                <i class="fas fa-copy"></i> Copiar enlace
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-incident table-action-btn" data-id="${incidencia.id}">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+                
+                // Añadir event listeners a los botones de ver
+                document.querySelectorAll('.view-incident').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const incidentId = this.getAttribute('data-id');
+                        viewIncident(incidentId);
+                    });
+                });
+                
+                // Añadir event listeners a los botones de copiar enlace
+                document.querySelectorAll('.copy-map-link').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const mapUrl = this.getAttribute('data-url');
+                        copyToClipboard(mapUrl, 'Mapa interactivo');
+                    });
+                });
+                
+                // Añadir event listeners a los botones de eliminar
+                document.querySelectorAll('.delete-incident').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const incidentId = this.getAttribute('data-id');
+                        deleteIncident(incidentId);
+                    });
+                });
+            }
+            
+            // Función para ver los detalles de una incidencia
+            function viewIncident(incidentId) {
+                const incidencias = getIncidencias();
+                const incident = incidencias.find(i => i.id === incidentId);
+                
+                if (incident) {
+                    const fecha = new Date(incident.fecha_creacion);
+                    const fechaFormateada = `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
+                    const mapViewUrl = `https://backend-incidencia.onrender.com/api/map-view/${incident.id}`;
+                    
                     const modalHtml = `
                         <div class="modal fade" id="incidentModal" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-lg">
@@ -916,20 +948,84 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <p><strong>Carretera:</strong> ${incident.carretera}</p>
-                                        <p><strong>PK:</strong> ${incident.kilometro}</p>
-                                        <p><strong>Ubicación:</strong> ${incident.ubicacion}</p>
-                                        <p><strong>Descripción:</strong> ${incident.descripcion}</p>
-                                        <p><strong>Tipo:</strong> ${incident.tipo}</p>
-                                        <p><strong>Fecha:</strong> ${fechaFormateada}</p>
-                                        <p><strong>Coordenadas:</strong> ${incident.latitud}, ${incident.longitud}</p>
-                                        ${fotosHtml}
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Carretera:</strong> ${incident.carretera}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>PK:</strong> ${incident.kilometro}
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Sentido:</strong> ${incident.sentido}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Calzada:</strong> ${incident.calzada}
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Tipo:</strong> ${incident.tipo}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Fecha:</strong> ${fechaFormateada}
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong>Ubicación:</strong> ${incident.ubicacion}
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong>Descripción:</strong> ${incident.descripcion}
+                                        </div>
+                                        ${incident.danos_infraestructura ? `
+                                        <div class="mb-3">
+                                            <strong>Daños a infraestructura:</strong> ${incident.danos_infraestructura}
+                                        </div>
+                                        ` : ''}
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Reportado por:</strong> ${incident.reportado_por}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Hora de detección:</strong> ${incident.hora_deteccion}
+                                            </div>
+                                        </div>
+                                        ${incident.hora_llegada ? `
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Hora de llegada:</strong> ${incident.hora_llegada}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Personal que llegó:</strong> ${incident.personal_llegada || 'No especificado'}
+                                            </div>
+                                        </div>
+                                        ` : ''}
+                                        ${incident.victimas === 'yes' ? `
+                                        <div class="victim-section">
+                                            <h6>Información de Víctimas</h6>
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <strong>Fallecidos:</strong> ${incident.fallecidos || 0}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <strong>Heridos:</strong> ${incident.heridos || 0}
+                                                </div>
+                                            </div>
+                                            ${incident.detalles_victimas ? `
+                                            <div class="mb-3">
+                                                <strong>Detalles:</strong> ${incident.detalles_victimas}
+                                            </div>
+                                            ` : ''}
+                                        </div>
+                                        ` : ''}
                                         <div class="links-container mt-3">
-                                            <h6>Enlaces:</h6>
-                                            <div class="d-flex flex-wrap gap-2">
-                                                <a href="${result.links.map_view}" target="_blank" class="btn btn-sm btn-info text-white"><i class="fas fa-map-marked-alt"></i> Ver Mapa</a>
-                                                <a href="${result.links.kml_file}" class="btn btn-sm btn-success text-white"><i class="fas fa-file-download"></i> Descargar KML</a>
-                                                <a href="${result.links.google_maps}" target="_blank" class="btn btn-sm btn-primary text-white"><i class="fab fa-google"></i> Google Maps</a>
+                                            <h6>Enlaces de la incidencia:</h6>
+                                            <div class="link-item">
+                                                <div class="link-text">Mapa Interactivo: ${mapViewUrl}</div>
+                                                <button class="copy-btn" data-url="${mapViewUrl}">
+                                                    <i class="fas fa-copy"></i> Copiar
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -941,17 +1037,40 @@
                         </div>
                     `;
                     
+                    // Añadir el modal al DOM
                     document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    
+                    // Mostrar el modal
                     const modal = new bootstrap.Modal(document.getElementById('incidentModal'));
                     modal.show();
-
+                    
+                    // Añadir event listener para el botón de copiar en el modal
+                    document.getElementById('incidentModal').addEventListener('shown.bs.modal', function() {
+                        const copyButton = this.querySelector('.copy-btn');
+                        if (copyButton) {
+                            copyButton.addEventListener('click', function() {
+                                const url = this.getAttribute('data-url');
+                                copyToClipboard(url, 'Mapa interactivo');
+                            });
+                        }
+                    });
+                    
+                    // Eliminar el modal cuando se cierre
                     document.getElementById('incidentModal').addEventListener('hidden.bs.modal', function() {
                         this.remove();
                     });
-
-                } catch (error) {
-                    console.error('Error al ver los detalles de la incidencia:', error);
-                    showAlert('Error al cargar los detalles de la incidencia: ' + error.message, 'danger');
+                }
+            }
+            
+            // Función para eliminar una incidencia
+            function deleteIncident(incidentId) {
+                if (confirm(`¿Está seguro de que desea eliminar la incidencia ${incidentId}?`)) {
+                    const incidencias = getIncidencias();
+                    const nuevasIncidencias = incidencias.filter(i => i.id !== incidentId);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(nuevasIncidencias));
+                    
+                    showAlert('Incidencia eliminada correctamente', 'success');
+                    loadIncidents(); // Recargar la tabla
                 }
             }
             
@@ -1051,7 +1170,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-
-
